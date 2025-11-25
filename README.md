@@ -60,6 +60,9 @@ We have retained the original core functionality while implementing significant 
 - **Parent Directory Navigation**  
   A `.. (Parent Directory)` link is shown when inside subfolders, respecting scope boundaries.
 
+- **Multi-Language Support (Automatic)**
+  The Worker automatically detects the user's preferred language (English, Spanish, Chinese, etc.) using the browser's **`Accept-Language` header** and renders all fixed text (headings, table columns, messages) in the corresponding language.
+
 ---
 
 ## 🚀 Setup Instructions
@@ -167,7 +170,8 @@ Use the Worker URL with the token as a query parameter:
 
 ## 🧭 Behavior Notes
 
-- Navigating outside scope → **403 Forbidden**  
-- Omitting `prefix` → Worker sets it to highest authorized scope  
-- Navigating to scope root → Worker redirects to clean `/?token=...`  
-- Page header shows base title + folder name; “Current Path” shows relative path  
+- **Language Detection:** The Worker reads the user's browser **`Accept-Language`** header to automatically select the display language from the supported list (currently English, Spanish, and Simplified Chinese).
+- Navigating outside scope → **403 Forbidden**  
+- Omitting `prefix` → Worker sets it to highest authorized scope  
+- Navigating to scope root → Worker redirects to clean `/?token=...`  
+- Page header shows base title + folder name; “Current Path” shows relative path
