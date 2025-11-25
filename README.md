@@ -1,18 +1,54 @@
 # 📂 r2-secure-dir-indexer
 
-**Description:** A Cloudflare Worker for R2 providing **token-based, scoped, and hierarchical access control** to directory listings. Includes file type sorting and OS-specific icons (Apple Silicon/Intel).
+**Description:**  
+A Cloudflare Worker for R2 providing **token-based, scoped, and hierarchical access control** to directory listings.  
+Includes file type sorting, OS-specific icons (Apple Silicon vs Intel), and clean URL handling.
 
-### Features
+---
 
-* **Token-Based Access:** Access is secured using URL tokens, granting users access only to their designated R2 prefix (folder).
-* **Hierarchical Scoping:** A single token can grant access to a top-level folder, with navigation restricted within that scope.
-* **Case-Insensitive Pathing:** Uses a dynamic internal map to handle case differences between tokens (which must be uppercase) and R2's actual mixed-case paths.
-* **Clean URLs:** Automatically cleans up the URL when navigating to the root scope (`/?token=...` instead of `/?prefix=...&token=...`).
-* **Visual File Sorting:** Files are primarily sorted by **extension/type** for easy grouping.
-* **Differentiated Icons:** Uses emojis to clearly distinguish between file types and operating system architecture:
-    * **Mac Silicon:** 🍎 ⚙️ (`-arm64.dmg`)
-    * **Mac Intel:** 🍎 🖥️ (`-x64.dmg`)
-    * **Windows:** 🪟, **Linux:** 🐧, **Android:** 🤖, **PDF:** 📃, etc.
+## ✨ Features
+
+- **Token-Based Access**  
+  Access is secured using URL tokens. Each token maps to a specific R2 prefix (folder) or the root.  
+  *Tokens are defined as Wrangler secrets (`TOKEN_...`) and must match exactly.*
+
+- **Dynamic Case Mapping**  
+  The Worker builds a case-insensitive map of all bucket prefixes.  
+  Tokens must be uppercase, but actual R2 paths may be mixed-case.  
+  The Worker resolves tokens to the correct casing automatically.
+
+- **Hierarchical Scoping**  
+  A token grants access to its folder scope and all subfolders.  
+  Navigation is restricted to that scope.
+
+- **Clean URLs**  
+  If a user navigates to the root of their scope, the Worker automatically redirects to a clean URL (`/?token=...`) without redundant `prefix` parameters.
+
+- **Security Enforcement**  
+  - Invalid tokens or attempts to access outside scope return a **403 Forbidden** page.  
+  - **POST requests** (upload, delete, move) are blocked with **405 Method Not Allowed**.  
+  - File downloads are supported via `/raw/<key>` paths.
+
+- **Visual File Sorting**  
+  Files are sorted by **extension/type first**, then by name.  
+  This groups similar file types together.
+
+- **Differentiated Icons**  
+  Emoji icons distinguish file types and OS architectures:
+  - 🍎 ⚙️ macOS Silicon (`-arm64.dmg`, `-arm64.pkg`)
+  - 🍎 🖥️ macOS Intel (`-x64.dmg`, `-x64.pkg`)
+  - 🍎 💻 macOS Universal/Unspecified
+  - 🪟 Windows (`.exe`, `.msi`, `.bat`, `.cmd`)
+  - 🐧 Linux (`.deb`, `.rpm`, `.sh`, `.tar`)
+  - 🤖 Android (`.apk`)
+  - 📃 PDF
+  - 📦 Archives (`.zip`, `.rar`, `.7z`)
+  - 🖼️ Images (`.jpg`, `.png`, `.gif`)
+  - 📝 Docs (`.doc`, `.docx`)
+  - 📄 Generic files
+
+- **Parent Directory Navigation**  
+  A `.. (Parent Directory)` link is shown when inside subfolders, respecting scope boundaries.
 
 ---
 
@@ -20,68 +56,108 @@
 
 ### 1. Cloudflare R2: API Token Creation
 
-You must create an **API Token** that grants the Worker permission to read the R2 bucket. Using a restricted token is a security best practice.
+Create an API Token that grants the Worker permission to read the R2 bucket.
 
-1.  Navigate to your **Cloudflare Dashboard**.
-2.  Go to **My Profile** > **API Tokens**.
-3.  Click **Create Token**.
-4.  Use the **Custom Token** template.
-5.  **Token Name:** Give it a meaningful name (e.g., `R2-Indexer-Worker`).
-6.  **Permissions:**
-    * **Account:** R2 Storage: **`Edit`** (This level is recommended for the dynamic case-mapping feature to work reliably across the entire bucket.)
-7.  Click **Continue to Summary** and **Create Token**.
-8.  **Immediately copy the token value.** You will use this as a secret environment variable.
+1. Go to **Cloudflare Dashboard** → **My Profile** → **API Tokens**  
+2. Click **Create Token** → use **Custom Token**  
+3. **Permissions:**  
+   - Account → R2 Storage → **Edit** (required for case-map generation)  
+4. Save and copy the token value. You’ll use this as a Wrangler secret.
 
 ---
 
-## 💻 Deployment using Wrangler CLI
+### 2. Project Structure
 
-Wrangler is the command-line tool for Cloudflare Workers. We will use it to configure environment secrets and deploy the worker.
+Ensure your project directory contains:
 
-### A. Project Structure
+- `worker.js` → Worker logic  
+- `worker.toml` → Deployment configuration and R2 binding
 
-Ensure you have the following two files in your project directory:
+---
 
-1.  **`worker.js`**: Contains the main Worker JavaScript code.
-2.  **`worker.toml`**: Contains the deployment configuration and R2 binding.
+### 3. Wrangler Setup
 
-### B. Setup and Login
+Install Wrangler and log in:
 
-1.  **Install Wrangler:**
-    ```bash
-    npm install -g wrangler
-    ```
+```bash
+npm install -g wrangler
+wrangler login
+```
 
-2.  **Login to Cloudflare:**
-    ```bash
-    wrangler login
-    ```
+---
 
-### C. Configure Environment Secrets
+### 4. Configure Environment Secrets
 
-The **token** definitions (`TOKEN_...`) are critical and must be set as environment secrets. For **each token** you want to activate, run the following command and paste the unique token value when prompted.
+Define tokens as Wrangler secrets.  
+Token names are derived from folder paths: replace `/` with `_`, uppercase everything, and end with `_`.
 
-1. Set the Root Access Token (TOKEN_ grants access to the entire bucket)
-   ```bash
-   wrangler secret put TOKEN_ A-SUPER-SECRET-ROOT-KEY
-   ```
+Examples:
 
-2. Set a Scoped Access Token (Example: TOKEN_CLIENT_A_ grants access to the "CLIENT/A/" folder)
-   ```bash
-   wrangler secret put TOKEN_CLIENT_A_ CLIENTA-MONTHLY-KEY
-   ```
-Note on Naming: Token names are derived from the folder path, replacing slashes (/) with underscores (_) and ending with an underscore. They must be ALL CAPS.
+```bash
+# Root Access Token (entire bucket)
+wrangler secret put TOKEN_ A-SUPER-SECRET-ROOT-KEY
 
-### D. Deploy the Worker
-Once the secrets are set and your worker.toml is configured with the correct bucket_name and ROOT URL, deploy your project:
+# Scoped Access Token (CLIENT/A/)
+wrangler secret put TOKEN_CLIENT_A_ CLIENTA-MONTHLY-KEY
+```
 
-   ```bash
-   wrangler deploy
-   ```
-### E. Accessing the Index
+<!-- ✏️ Add more tokens here as needed -->
 
-Access the deployed worker URL using the specific token as a query parameter:
+---
 
-Root Access: https://your-worker.your-domain.dev/?token=A-SUPER-SECRET-ROOT-KEY
+### 5. Configure Bindings and Environment
 
-Scoped Access: https://your-worker.your-domain.dev/?token=CLIENTA-MONTHLY-KEY
+In `worker.toml`, bind your R2 bucket and set `ROOT` (optional) to point to a public base URL for direct file links.  
+If `ROOT` is omitted, downloads use the Worker’s `/raw/<key>` route.
+
+```toml
+name = "r2-secure-dir-indexer"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+ROOT = "https://your-public-r2-url" # optional
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "your-bucket-name"
+```
+
+<!-- ✏️ Replace bucket_name and ROOT with your actual values -->
+
+---
+
+### 6. Deploy the Worker
+
+```bash
+wrangler deploy
+```
+
+---
+
+### 7. Accessing the Index
+
+Use the Worker URL with the token as a query parameter:
+
+- **Root Access**  
+  ```
+  https://your-worker.your-domain.dev/?token=A-SUPER-SECRET-ROOT-KEY
+  ```
+
+- **Scoped Access**  
+  ```
+  https://your-worker.your-domain.dev/?token=CLIENTA-MONTHLY-KEY
+  ```
+
+- **Direct File Downloads**  
+  - If `ROOT` is set: files link to `ROOT/<key>`  
+  - If `ROOT` is not set: files link to `/raw/<key>`
+
+---
+
+## 🧭 Behavior Notes
+
+- Navigating outside scope → **403 Forbidden**  
+- Omitting `prefix` → Worker sets it to highest authorized scope  
+- Navigating to scope root → Worker redirects to clean `/?token=...`  
+- Page header shows base title + folder name; “Current Path” shows relative path  
