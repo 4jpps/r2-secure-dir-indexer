@@ -61,22 +61,23 @@ Ensure you have the following two files in your project directory:
 
 The **token** definitions (`TOKEN_...`) are critical and must be set as environment secrets. For **each token** you want to activate, run the following command and paste the unique token value when prompted.
 
-```bash
 # 1. Set the Root Access Token (TOKEN_ grants access to the entire bucket)
-wrangler secret put TOKEN_ 
-# Paste value: A-SUPER-SECRET-ROOT-KEY
+```bash
+wrangler secret put TOKEN_ A-SUPER-SECRET-ROOT-KEY
+```
 
 # 2. Set a Scoped Access Token (Example: TOKEN_CLIENT_A_ grants access to the "CLIENT/A/" folder)
-wrangler secret put TOKEN_CLIENT_A_ 
-# Paste value: CLIENTA-MONTHLY-KEY
+```bash
+wrangler secret put TOKEN_CLIENT_A_ CLIENTA-MONTHLY-KEY
+```
 Note on Naming: Token names are derived from the folder path, replacing slashes (/) with underscores (_) and ending with an underscore. They must be ALL CAPS.
 
 D. Deploy the Worker
 Once the secrets are set and your worker.toml is configured with the correct bucket_name and ROOT URL, deploy your project:
 
-Bash
-
+```bash
 wrangler deploy
+```
 E. Accessing the Index
 Access the deployed worker URL using the specific token as a query parameter:
 
