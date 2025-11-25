@@ -4,6 +4,128 @@
 // Modified by: Jeff Parrish PC Services (jpps.us) & Google Gemini
 //---------------------------------------//
 
+// --- 1. TRANSLATION DATA ---
+const TRANSLATIONS = {
+    // English (Default)
+    en: {
+        baseTitle: "JPPS Support Files",
+        currentPath: "Current Path:",
+        refreshButton: "Refresh",
+        folders: "folders",
+        files: "files",
+        nameCol: "Name",
+        sizeCol: "Size",
+        timeCol: "Last Modified",
+        parentDir: ".. (Parent Directory)",
+        accessDeniedTitle: "🛑 Access Denied (403)",
+        accessDeniedBody1: "The access token provided is missing or invalid.",
+        accessDeniedBody2: "Please ensure you are using the correct URL with a valid token.",
+        methodNotAllowed: "Method Not Allowed: Management operations (Upload, Delete, Move) are disabled.",
+        iconKey: "Icon Key:",
+        genericFile: "Generic File",
+        folder: "Folder/Directory",
+        win: "Windows (.exe, .msi, etc.)",
+        macBase: "macOS Base File (.dmg, .pkg)",
+        macArm: "Apple Silicon (ARM64)",
+        macIntel: "Intel Architecture (x64)",
+        macUni: "Universal/Unspecified Mac",
+        linux: "Linux (.deb, .rpm, etc.)",
+        android: "Android (.apk)",
+        pdf: "PDF Document",
+        archive: "Archive (.zip, .rar, etc.)",
+        image: "Image Files",
+        docs: "Document Files",
+        na: "N/A"
+    },
+    // Spanish
+    es: {
+        baseTitle: "Archivos de Soporte JPPS",
+        currentPath: "Ruta Actual:",
+        refreshButton: "Actualizar",
+        folders: "carpetas",
+        files: "archivos",
+        nameCol: "Nombre",
+        sizeCol: "Tamaño",
+        timeCol: "Última Modificación",
+        parentDir: ".. (Directorio Superior)",
+        accessDeniedTitle: "🛑 Acceso Denegado (403)",
+        accessDeniedBody1: "El token de acceso proporcionado es incorrecto o no existe.",
+        accessDeniedBody2: "Asegúrese de estar utilizando la URL correcta con un token válido.",
+        methodNotAllowed: "Método No Permitido: Las operaciones de gestión (Cargar, Eliminar, Mover) están desactivadas.",
+        iconKey: "Clave de Iconos:",
+        genericFile: "Archivo Genérico",
+        folder: "Carpeta/Directorio",
+        win: "Windows (.exe, .msi, etc.)",
+        macBase: "Archivo Base de macOS (.dmg, .pkg)",
+        macArm: "Apple Silicon (ARM64)",
+        macIntel: "Arquitectura Intel (x64)",
+        macUni: "Mac Universal/No especificado",
+        linux: "Linux (.deb, .rpm, etc.)",
+        android: "Android (.apk)",
+        pdf: "Documento PDF",
+        archive: "Archivo Comprimido (.zip, .rar, etc.)",
+        image: "Archivos de Imagen",
+        docs: "Archivos de Documento",
+        na: "N/D"
+    },
+    // Simplified Chinese
+    zh: {
+        baseTitle: "JPPS 支持文件",
+        currentPath: "当前路径:",
+        refreshButton: "刷新",
+        folders: "文件夹",
+        files: "文件",
+        nameCol: "名称",
+        sizeCol: "大小",
+        timeCol: "上次修改时间",
+        parentDir: ".. (上级目录)",
+        accessDeniedTitle: "🛑 访问被拒绝 (403)",
+        accessDeniedBody1: "提供的访问令牌缺失或无效。",
+        accessDeniedBody2: "请确保您使用的 URL 包含有效的令牌。",
+        methodNotAllowed: "方法不被允许: 管理操作（上传、删除、移动）已被禁用。",
+        iconKey: "图标说明:",
+        genericFile: "通用文件",
+        folder: "文件夹/目录",
+        win: "Windows (.exe, .msi 等)",
+        macBase: "macOS 基本文件 (.dmg, .pkg)",
+        macArm: "Apple 芯片 (ARM64)",
+        macIntel: "Intel 架构 (x64)",
+        macUni: "Mac 通用/未指定",
+        linux: "Linux (.deb, .rpm 等)",
+        android: "Android (.apk)",
+        pdf: "PDF 文档",
+        archive: "压缩文件 (.zip, .rar 等)",
+        image: "图片文件",
+        docs: "文档文件",
+        na: "不可用"
+    }
+};
+
+/**
+ * Parses the Accept-Language header to determine the preferred language.
+ * @param {string} header - The value of the Accept-Language header.
+ * @returns {string} The two-letter language code (e.g., 'en', 'es', 'zh').
+ */
+function getLanguageCode(request) {
+    const acceptLanguageHeader = request.headers.get("Accept-Language");
+    if (!acceptLanguageHeader) return 'en';
+
+    // Simplified parsing: takes the first language code before any separator (e.g., "en-US,en;q=0.9" -> "en")
+    const preferredLangCode = acceptLanguageHeader.split(',')[0].split('-')[0].toLowerCase();
+    
+    // Check if the preferred language is in our translation map.
+    if (TRANSLATIONS[preferredLangCode]) {
+        return preferredLangCode;
+    } 
+    // Handle broad Chinese codes (zh-CN, zh-TW, etc.)
+    if (preferredLangCode.startsWith('zh')) {
+        return 'zh'; // Defaulting all Chinese requests to Simplified Chinese
+    }
+
+    return 'en'; // Default to English if no match is found
+}
+
+
 export default {
     async fetch(request, env, ctx) {
       
@@ -11,22 +133,26 @@ export default {
         let prefix = url.searchParams.get("prefix") ?? "";
         const queryToken = url.searchParams.get("token");
         
+        // --- LANGUAGE SELECTION ---
+        const langCode = getLanguageCode(request);
+        const T = TRANSLATIONS[langCode] || TRANSLATIONS.en;
+
         // --- 1. Find the Highest Authorized Scope (Includes Dynamic Map Generation) ---
+        // Note: getHighestAuthorizedScope and generateCaseMap do not require translation object
         const highestScope = await getHighestAuthorizedScope(env, queryToken); 
 
         // --- 2. Security Check & Prefix Adjustment ---
         if (highestScope === null) {
-            return handleUnauthorizedAccess();
+            // Pass the translation object T to the unauthorized handler
+            return handleUnauthorizedAccess(T);
         }
         
         // A. Handle invalid access attempts (requested prefix is NOT in scope)
         if (prefix !== "" && !prefix.startsWith(highestScope)) {
-            // User manually typed an invalid prefix outside their scope.
-            return handleUnauthorizedAccess();
+            return handleUnauthorizedAccess(T);
         }
         
         // B. Handle Initial Load / Clean URL internal processing
-        // If the URL has no prefix parameter, we internally set the prefix to the highestScope.
         if (prefix === "") {
             prefix = highestScope;
         }
@@ -35,17 +161,14 @@ export default {
         const requestedPrefixParam = url.searchParams.get("prefix");
         if (requestedPrefixParam !== null && requestedPrefixParam === highestScope) {
             const cleanURL = url.origin + `/?token=${encodeURIComponent(queryToken)}`;
-            // Redirect to the clean URL, stripping the redundant prefix parameter.
             return Response.redirect(cleanURL, 302);
         }
-        
-        // At this point: highestScope is valid, and the actual R2 prefix is stored in the 'prefix' variable.
         
         // --- 3. If access is granted, proceed with execution ---
         
         // Block all POST requests
         if (request.method === "POST") {
-           return new Response("Method Not Allowed: Management operations (Upload, Delete, Move) are disabled.", { status: 405 });
+           return new Response(T.methodNotAllowed, { status: 405 });
         }
     
         // Handle /raw/ path to allow file downloads
@@ -67,7 +190,7 @@ export default {
         }
     
         // Handle the main index page (GET request)
-        const baseTitle = "JPPS Support Files"; 
+        const baseTitle = T.baseTitle; 
         const rootUrl = env.ROOT;
         
         const folderName = getScopeDisplayName(highestScope);
@@ -80,12 +203,10 @@ export default {
         // H2 Path display
         let currentPathDisplay = "";
         if (prefix !== highestScope) {
-            // Calculate the path relative to the highestScope
             currentPathDisplay = prefix.startsWith(highestScope) 
                 ? prefix.slice(highestScope.length) 
                 : prefix;
             
-            // Remove trailing slash for cleaner look
             if (currentPathDisplay.endsWith('/')) {
                 currentPathDisplay = currentPathDisplay.slice(0, -1);
             }
@@ -94,7 +215,7 @@ export default {
         const tokenParam = queryToken ? `&token=${encodeURIComponent(queryToken)}` : '';
         
         // Render the tree using the determined 'prefix'
-        const { html, totalFiles, totalDirs } = await renderTree(env.R2, prefix, rootUrl, tokenParam, highestScope);
+        const { html, totalFiles, totalDirs } = await renderTree(env.R2, prefix, rootUrl, tokenParam, highestScope, T);
     
         // --- HTML Rendering ---
         
@@ -105,26 +226,24 @@ export default {
 
         if (shouldShowParent) {
             if (parentPfx === highestScope) {
-                // If navigating back to the authorized root, use the clean URL
                 parentLinkUrl = `/?${tokenParam}`;
             } else {
-                // Otherwise, use the standard prefix URL
                 parentLinkUrl = `/?prefix=${encodeURIComponent(parentPfx)}${tokenParam}`;
             }
         }
         
         const parentHtml = shouldShowParent ? 
-            `<tr class="dir-row"><td colspan="3"><span class="icon icon-folder">⬆️</span> <a href="${parentLinkUrl}" class="file-link">.. (Parent Directory)</a></td></tr>` 
+            `<tr class="dir-row"><td colspan="3"><span class="icon icon-folder">⬆️</span> <a href="${parentLinkUrl}" class="file-link">${T.parentDir}</a></td></tr>` 
             : "";
         
         const pathHeadingHtml = currentPathDisplay ? 
-            `<h2>Current Path: /${escapeHtml(currentPathDisplay)}</h2>` : 
+            `<h2>${T.currentPath} /${escapeHtml(currentPathDisplay)}</h2>` : 
             '';
         
-        const iconLegendHtml = getIconLegendHtml();
+        const iconLegendHtml = getIconLegendHtml(T); // Pass T here
 
         const page = `<!doctype html>
-        <html lang="en">
+        <html lang="${langCode}">
         <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -277,17 +396,17 @@ export default {
           <h1>${escapeHtml(displayTitle)}</h1>
           ${pathHeadingHtml}
           <div>
-            <button onclick="location.href='/?prefix=${encodeURIComponent(prefix)}${tokenParam}'">Refresh</button>
+            <button onclick="location.href='/?prefix=${encodeURIComponent(prefix)}${tokenParam}'">${T.refreshButton}</button>
           </div>
           
-          <p>${totalDirs} folders , ${totalFiles} files.</p>
+          <p>${totalDirs} ${T.folders} , ${totalFiles} ${T.files}.</p>
           
           <table>
             <thead>
               <tr>
-                <th class="name-col">Name</th>
-                <th class="size-col">Size</th>
-                <th class="time-col">Last Modified</th>
+                <th class="name-col">${T.nameCol}</th>
+                <th class="size-col">${T.sizeCol}</th>
+                <th class="time-col">${T.timeCol}</th>
               </tr>
             </thead>
             <tbody>
@@ -315,6 +434,8 @@ export default {
 // --- CORE SECURITY FUNCTIONS (Dynamic Recursive CaseMap) ---
 // ---
 
+// ... (generateCaseMap and getHighestAuthorizedScope remain unchanged as they are language-agnostic) ...
+
 /**
  * Creates a comprehensive case map by recursively listing all delimited prefixes (folders) 
  * in the R2 bucket. This is done using an iterative queue to prevent deep recursion issues.
@@ -323,10 +444,8 @@ export default {
  */
 async function generateCaseMap(bucket) {
     const caseMap = {};
-    // Start with the root prefix
     let prefixQueue = [""]; 
     
-    // Process the queue iteratively (breadth-first traversal)
     while (prefixQueue.length > 0) {
         const currentPrefix = prefixQueue.shift();
         let cursor;
@@ -341,21 +460,13 @@ async function generateCaseMap(bucket) {
             cursor = page.truncated ? page.cursor : undefined;
 
             for (const p of page.delimitedPrefixes || []) {
-                // p is the correct mixed-case path, e.g., "Mathews/Upload/Client/"
-                
-                // 1. Create the all-uppercase key: 
                 const mapKey = p.toUpperCase(); 
-                
-                // 2. Store the correct mixed-case value
                 caseMap[mapKey] = p;
-                
-                // 3. Add this new directory to the queue to scan its subdirectories
                 prefixQueue.push(p); 
             }
         } while (cursor);
     }
     
-    // Add the root map entry for TOKEN_
     caseMap[""] = "";
     
     return caseMap;
@@ -369,7 +480,6 @@ async function generateCaseMap(bucket) {
 async function getHighestAuthorizedScope(env, queryToken) {
     if (!queryToken) return null;
 
-    // Generate the comprehensive map based on the entire bucket structure
     const caseMap = await generateCaseMap(env.R2);
     
     let currentBestPrefix = null;
@@ -382,19 +492,14 @@ async function getHighestAuthorizedScope(env, queryToken) {
                 
                 let testPrefix;
                 if (envKey === "TOKEN_") {
-                    testPrefix = ""; // Root token
+                    testPrefix = ""; 
                 } else {
-                    // 1. Slice off "TOKEN_" (6 chars) and the trailing "_" (1 char).
                     let rawPrefix = envKey.slice(6, -1); 
-                    
-                    // 2. Convert underscores to slashes. This produces the all-uppercase key for lookup.
                     testPrefix = rawPrefix.replaceAll('_', '/') + '/';
                 }
                 
-                // 3. Apply the dynamic case mapping to get the correct R2 casing.
                 const mappedPrefix = caseMap[testPrefix] || testPrefix; 
                 
-                // Found a valid scope. Keep the one that is shortest (highest in the hierarchy).
                 if (currentBestPrefix === null || mappedPrefix.length < currentBestPrefix.length) {
                     currentBestPrefix = mappedPrefix;
                 }
@@ -419,7 +524,7 @@ function getFileOSIcon(fileName) {
     const extMatch = nameLower.match(/\.([0-9a-z]+)(?=[?#])?$|\.([0-9a-z]+)$/i);
     
     if (!extMatch) {
-        return [{ icon: '📄', class: 'icon-file' }];
+        return [{ icon: '📄', class: 'icon-file', key: 'genericFile' }];
     }
     
     const ext = (extMatch[1] || extMatch[2]).toLowerCase();
@@ -427,68 +532,44 @@ function getFileOSIcon(fileName) {
 
     // --- Specific Mac Logic ---
     if (ext === 'dmg' || ext === 'pkg') {
-        icons.push({ icon: '🍎', class: 'icon-apple' });
+        icons.push({ icon: '🍎', class: 'icon-apple', key: 'macBase' });
         
-        // Use the exact suffixes provided by the user: -arm64.dmg and -x64.dmg
         if (nameLower.includes('-arm64')) {
-            icons.push({ icon: '⚙️', class: 'icon-apple-arm', description: 'Apple Silicon (ARM)' });
+            icons.push({ icon: '⚙️', class: 'icon-apple-arm', key: 'macArm' });
         } else if (nameLower.includes('-x64')) {
-            icons.push({ icon: '🖥️', class: 'icon-apple-intel', description: 'Intel (x64)' });
+            icons.push({ icon: '🖥️', class: 'icon-apple-intel', key: 'macIntel' });
         } else {
-            // Universal or unspecified architecture, using a generic computer icon
-             icons.push({ icon: '💻', class: 'icon-apple', description: 'Universal/Unspecified Mac' });
+             icons.push({ icon: '💻', class: 'icon-apple', key: 'macUni' });
         }
         return icons;
     }
     
     // --- General OS Logic ---
     switch (ext) {
-        // Windows
-        case 'exe':
-        case 'msi':
-        case 'bat':
-        case 'cmd':
-            icons.push({ icon: '🪟', class: 'icon-windows' });
+        case 'exe': case 'msi': case 'bat': case 'cmd':
+            icons.push({ icon: '🪟', class: 'icon-windows', key: 'win' });
             break;
-
-        // Linux / Unix
-        case 'deb':
-        case 'rpm':
-        case 'sh':
-        case 'tar':
-            icons.push({ icon: '🐧', class: 'icon-linux' });
+        case 'deb': case 'rpm': case 'sh': case 'tar':
+            icons.push({ icon: '🐧', class: 'icon-linux', key: 'linux' });
             break;
-
-        // Android
         case 'apk':
-            icons.push({ icon: '🤖', class: 'icon-android' });
+            icons.push({ icon: '🤖', class: 'icon-android', key: 'android' });
             break;
-
-        // PDF Document
         case 'pdf':
-            icons.push({ icon: '📃', class: 'icon-file' });
+            icons.push({ icon: '📃', class: 'icon-file', key: 'pdf' });
+            break;
+        case 'doc': case 'docx': case 'txt':
+            icons.push({ icon: '📝', class: 'icon-file', key: 'docs' });
+            break;
+        case 'jpg': case 'jpeg': case 'png': case 'gif': 
+            icons.push({ icon: '🖼️', class: 'icon-file', key: 'image' });
+            break;
+        case 'zip': case 'rar': case '7z': 
+            icons.push({ icon: '📦', class: 'icon-file', key: 'archive' });
             break;
             
-        // Other common types
-        case 'doc':
-        case 'docx':
-            icons.push({ icon: '📝', class: 'icon-file' });
-            break;
-        case 'jpg':
-        case 'jpeg':
-        case 'png':
-        case 'gif': 
-            icons.push({ icon: '🖼️', class: 'icon-file' });
-            break;
-        case 'zip':
-        case 'rar':
-        case '7z': 
-            icons.push({ icon: '📦', class: 'icon-file' });
-            break;
-            
-        // Default Fallback
         default:
-            icons.push({ icon: '📄', class: 'icon-file' });
+            icons.push({ icon: '📄', class: 'icon-file', key: 'genericFile' });
             break;
     }
 
@@ -497,29 +578,31 @@ function getFileOSIcon(fileName) {
 
 /**
  * Generates the HTML for the icon key/legend at the bottom of the page.
+ * @param {Object} T - The translation object.
  * @returns {string} HTML for the icon key.
  */
-function getIconLegendHtml() {
+function getIconLegendHtml(T) {
+    // Note: The 'key' in getFileOSIcon must match the key used here.
     const legendItems = [
-        { icon: '📁', description: 'Folder/Directory', class: 'icon-folder' },
-        { icon: '🪟', description: 'Windows (.exe, .msi, etc.)', class: 'icon-windows' },
-        { icon: '🍎', description: 'macOS Base File (.dmg, .pkg)', class: 'icon-apple' },
-        { icon: '⚙️', description: 'Apple Silicon (ARM64)', class: 'icon-apple-arm' },
-        { icon: '🖥️', description: 'Intel Architecture (x64)', class: 'icon-apple-intel' },
-        { icon: '🐧', description: 'Linux (.deb, .rpm, etc.)', class: 'icon-linux' },
-        { icon: '🤖', description: 'Android (.apk)', class: 'icon-android' },
-        { icon: '📃', description: 'PDF Document', class: 'icon-file' }, 
-        { icon: '📦', description: 'Archive (.zip, .rar, etc.)', class: 'icon-file' },
-        { icon: '📄', description: 'Generic File', class: 'icon-file' },
+        { icon: '📁', key: 'folder', class: 'icon-folder' },
+        { icon: '🪟', key: 'win', class: 'icon-windows' },
+        { icon: '🍎', key: 'macBase', class: 'icon-apple' },
+        { icon: '⚙️', key: 'macArm', class: 'icon-apple-arm' },
+        { icon: '🖥️', key: 'macIntel', class: 'icon-apple-intel' },
+        { icon: '🐧', key: 'linux', class: 'icon-linux' },
+        { icon: '🤖', key: 'android', class: 'icon-android' },
+        { icon: '📃', key: 'pdf', class: 'icon-file' }, 
+        { icon: '📦', key: 'archive', class: 'icon-file' },
+        { icon: '📄', key: 'genericFile', class: 'icon-file' },
     ];
 
     const listHtml = legendItems.map(item => 
-        `<li><span class="icon ${item.class}">${item.icon}</span> ${escapeHtml(item.description)}</li>`
+        `<li><span class="icon ${item.class}">${item.icon}</span> ${escapeHtml(T[item.key] || item.key)}</li>`
     ).join('');
 
     return `
         <div class="icon-key-container">
-            <h3>Icon Key:</h3>
+            <h3>${T.iconKey}</h3>
             <ul>
                 ${listHtml}
             </ul>
@@ -527,45 +610,18 @@ function getIconLegendHtml() {
     `;
 }
 
-
-/**
- * Extracts the final folder name (the directory the token grants access to) from the full prefix.
- * e.g., "Mathews/Upload/Client/" -> "Client"
- * @param {string} prefix The full R2 prefix with correct casing.
- * @returns {string} The final folder name or an empty string if it's the root.
- */
-function getScopeDisplayName(prefix) {
-    if (!prefix || prefix === "") {
-        return "";
-    }
-    
-    // 1. Trim the trailing slash
-    const trimmed = prefix.endsWith("/") ? prefix.slice(0, -1) : prefix;
-    
-    // 2. Find the last path component
-    const lastSlashIndex = trimmed.lastIndexOf("/");
-    
-    if (lastSlashIndex === -1) {
-        // This handles a single top-level folder name like "JPPS"
-        return trimmed;
-    } else {
-        // This handles nested paths, slicing off everything before the last slash
-        return trimmed.slice(lastSlashIndex + 1);
-    }
-}
-
-
 /**
  * Returns a 403 Forbidden HTML response.
+ * @param {Object} T - The translation object.
  */
-function handleUnauthorizedAccess() {
+function handleUnauthorizedAccess(T) {
     
     const htmlContent = `<!doctype html>
-    <html lang="en">
+    <html lang="${T.langCode}">
     <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>403 Forbidden</title>
+    <title>${T.accessDeniedTitle}</title>
     <style>
     body { 
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
@@ -592,15 +648,15 @@ function handleUnauthorizedAccess() {
     p {
         font-size: 1.2em;
         color: #6c757d;
-        margin-bottom: 30px;
+        margin-bottom: 10px;
     }
     </style>
     </head>
     <body>
         <div class="error-container">
-            <h1>🛑 Access Denied (403)</h1>
-            <p>The access token provided is missing or invalid.</p>
-            <p>Please ensure you are using the correct URL with a valid token.</p>
+            <h1>${T.accessDeniedTitle}</h1>
+            <p>${T.accessDeniedBody1}</p>
+            <p>${T.accessDeniedBody2}</p>
         </div>
     </body>
     </html>`;
@@ -626,13 +682,17 @@ function formatSize(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-function formatTime(date) {
-  if (!date) return 'N/A';
+/**
+ * @param {Date | null} date 
+ * @param {Object} T - The translation object.
+ */
+function formatTime(date, T) {
+  if (!date) return T.na;
   return date.toISOString().slice(0, 19).replace('T', ' '); 
 }
 
 
-async function renderTree(bucket, prefix, rootUrl = null, tokenParam = '', highestScope = '') {
+async function renderTree(bucket, prefix, rootUrl = null, tokenParam = '', highestScope = '', T) {
   let totalFiles = 0, totalDirs = 0;
 
   async function listLevel(curPrefix) {
@@ -674,7 +734,6 @@ async function renderTree(bucket, prefix, rootUrl = null, tokenParam = '', highe
       totalDirs++;
       const dirName = escapeHtml(d.name) + '/';
       
-      // Determine link: If the destination is the highest scope, use the clean URL, otherwise use the prefix.
       const linkPrefix = d.prefix === highestScope ? "" : `prefix=${encodeURIComponent(d.prefix)}`;
       const link = `/?${linkPrefix}${tokenParam}`; 
       
@@ -689,7 +748,6 @@ async function renderTree(bucket, prefix, rootUrl = null, tokenParam = '', highe
     totalFiles += files.length;
     levelHtml += files
         .sort((a, b) => {
-          // Helper to get the extension, or an empty string if none
           const getExt = (name) => {
               const match = name.match(/\.([0-9a-z]+)(?=[?#])?$|\.([0-9a-z]+)$/i);
               return match ? (match[1] || match[2]).toLowerCase() : '';
@@ -698,11 +756,9 @@ async function renderTree(bucket, prefix, rootUrl = null, tokenParam = '', highe
           const extA = getExt(a.name);
           const extB = getExt(b.name);
           
-          // Primary sort: by extension
           if (extA < extB) return -1;
           if (extA > extB) return 1;
           
-          // Secondary sort: by file name (ascending)
           return a.name.localeCompare(b.name, "en");
         })
         .map(f => {
@@ -715,10 +771,10 @@ async function renderTree(bucket, prefix, rootUrl = null, tokenParam = '', highe
           }
 
           const fileSize = formatSize(f.size);
-          const fileTime = formatTime(f.time);
+          const fileTime = formatTime(f.time, T); // Pass T here
           
-          const osIcons = getFileOSIcon(f.name); // <--- Call the icon function
-          const iconsHtml = osIcons.map(icon => `<span class="icon ${icon.class}">${icon.icon}</span>`).join('');
+          const osIcons = getFileOSIcon(f.name); 
+          const iconsHtml = osIcons.map(icon => `<span class="icon ${icon.class}" title="${T[icon.key] || icon.key}">${icon.icon}</span>`).join(''); // Add title for better UX
 
           const fileTooltip = `${fileSize} | ${fileTime}`; 
           
@@ -740,7 +796,26 @@ async function renderTree(bucket, prefix, rootUrl = null, tokenParam = '', highe
 
   const result = await listLevel(prefix);
   
-  return { html: result.html, totalFiles: result.fileCount, totalDirs: result.html.split('dir-row').length -1 };
+  // Calculate totalDirs accurately
+  return { html: result.html, totalFiles: result.fileCount, totalDirs: totalDirs };
+}
+
+
+// ... (getScopeDisplayName, escapeHtml, and parentPrefix remain unchanged as they are language-agnostic) ...
+
+function getScopeDisplayName(prefix) {
+    if (!prefix || prefix === "") {
+        return "";
+    }
+    
+    const trimmed = prefix.endsWith("/") ? prefix.slice(0, -1) : prefix;
+    const lastSlashIndex = trimmed.lastIndexOf("/");
+    
+    if (lastSlashIndex === -1) {
+        return trimmed;
+    } else {
+        return trimmed.slice(lastSlashIndex + 1);
+    }
 }
 
 function escapeHtml(s) {
