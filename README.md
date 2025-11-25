@@ -28,55 +28,58 @@ You must create an **API Token** that grants the Worker permission to read the R
 4.  Use the **Custom Token** template.
 5.  **Token Name:** Give it a meaningful name (e.g., `R2-Indexer-Worker`).
 6.  **Permissions:**
-    * **Account:** Cloudflare Workers: `None`
-    * **Account:** Cloudflare Pages: `None`
-    * **Account:** R2 Storage: **`Edit`** (This level is required to perform the recursive listing necessary for access control.)
-        * *If you want read-only listing:* Select **`Read`** instead, but this may prevent the Worker from dynamically handling case-sensitive directory names if your token doesn't grant full account R2 listing permission. **`Edit`** is recommended for full functionality.
+    * **Account:** R2 Storage: **`Edit`** (This level is recommended for the dynamic case-mapping feature to work reliably across the entire bucket.)
 7.  Click **Continue to Summary** and **Create Token**.
 8.  **Immediately copy the token value.** You will use this as a secret environment variable.
 
-### 2. Cloudflare Worker Deployment
+---
 
-You can use the `wrangler.toml` file to deploy, or deploy directly through the Cloudflare UI.
+## 💻 Deployment using Wrangler CLI
 
-#### A. Bind R2 Bucket
+Wrangler is the command-line tool for Cloudflare Workers. We will use it to configure environment secrets and deploy the worker.
 
-The Worker must be bound to your R2 bucket.
+### A. Project Structure
 
-1.  Go to your **Worker's Dashboard**.
-2.  Navigate to **Settings** > **Variables** (or the **Resources** tab if using the new UI).
-3.  Under **R2 Bucket Bindings** (or "R2"), click **Add binding**.
-    * **Variable Name:** Set this to **`R2`** (This exact name is used in the `worker.js` script).
-    * **Bucket:** Select your target R2 bucket from the dropdown.
+Ensure you have the following two files in your project directory:
 
-#### B. Set Environment Variables (Secrets)
+1.  **`worker.js`**: Contains the main Worker JavaScript code.
+2.  **`worker.toml`**: Contains the deployment configuration and R2 binding.
 
-All access tokens and path information must be stored as **Secrets** (Environment Variables prefixed with `SECRETS_`).
+### B. Setup and Login
 
-1.  Go to **Settings** > **Variables** > **Add Secret**.
+1.  **Install Wrangler:**
+    ```bash
+    npm install -g wrangler
+    ```
 
-| Secret Name | Example Value | Description |
-| :--- | :--- | :--- |
-| **`ROOT`** | `https://pub-yourbucketid.r2.dev` | **Your R2 Public Domain URL.** This is used to construct direct download links. If you are not using a Custom Domain, this will be your public R2 ID domain. |
-| **`TOKEN_`** | `A-SUPER-SECRET-ROOT-KEY` | **Root Access Token.** Grants access to the entire bucket (prefix `""`). Used for a primary user or administrator. |
-| **`TOKEN_CLIENT_A_`** | `CLIENTA-MONTHLY-KEY` | **Scoped Access Token.** Grants access to the R2 path that matches the token name, replacing underscores with slashes. This example grants access to the R2 path `CLIENT/A/`. **Token names must be ALL CAPS.** |
+2.  **Login to Cloudflare:**
+    ```bash
+    wrangler login
+    ```
 
-**Example of Token-to-Path Mapping:**
+### C. Configure Environment Secrets
 
-| Secret Name | Token Value (The Secret) | R2 Path Granted |
-| :--- | :--- | :--- |
-| `TOKEN_` | `MYROOTKEY` | `""` (Root of the bucket) |
-| `TOKEN_MATHEWS_` | `MATH001` | `Mathews/` |
-| `TOKEN_MATHEWS_UPLOAD_CLIENT_` | `MATHEWSCLIENT` | `Mathews/Upload/Client/` |
+The **token** definitions (`TOKEN_...`) are critical and must be set as environment secrets. For **each token** you want to activate, run the following command and paste the unique token value when prompted.
 
-### 3. Deploy and Access
+```bash
+# 1. Set the Root Access Token (TOKEN_ grants access to the entire bucket)
+wrangler secret put TOKEN_ 
+# Paste value: A-SUPER-SECRET-ROOT-KEY
 
-1.  Paste the Worker code into a file named **`worker.js`**.
-2.  Deploy the Worker.
-3.  Access the worker URL using a token, e.g.:
+# 2. Set a Scoped Access Token (Example: TOKEN_CLIENT_A_ grants access to the "CLIENT/A/" folder)
+wrangler secret put TOKEN_CLIENT_A_ 
+# Paste value: CLIENTA-MONTHLY-KEY
+Note on Naming: Token names are derived from the folder path, replacing slashes (/) with underscores (_) and ending with an underscore. They must be ALL CAPS.
 
-    `https://your-worker.your-domain.dev/?token=MYROOTKEY`
-    
-    or for scoped access:
-    
-    `https://your-worker.your-domain.dev/?token=MATHEWSCLIENT`
+D. Deploy the Worker
+Once the secrets are set and your worker.toml is configured with the correct bucket_name and ROOT URL, deploy your project:
+
+Bash
+
+wrangler deploy
+E. Accessing the Index
+Access the deployed worker URL using the specific token as a query parameter:
+
+Root Access: https://your-worker.your-domain.dev/?token=A-SUPER-SECRET-ROOT-KEY
+
+Scoped Access: https://your-worker.your-domain.dev/?token=CLIENTA-MONTHLY-KEY
