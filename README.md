@@ -6,6 +6,16 @@ Includes file type sorting, OS-specific icons (Apple Silicon vs Intel), and clea
 
 ---
 
+## 📜 Source and Attribution
+
+This project, **`r2-secure-dir-indexer`**, is based on the original Cloudflare Worker script **Listr2** by [xolyn](https://github.com/xolyn/listr2).
+
+We have retained the original core functionality while implementing significant security, feature, and visual enhancements, including token-based scoping and OS-specific file differentiation.
+
+**Original Project:** [https://github.com/xolyn/listr2](https://github.com/xolyn/listr2)
+
+---
+
 ## ✨ Features
 
 - **Token-Based Access**  
