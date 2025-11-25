@@ -1,5 +1,5 @@
 //---------------------------------------//
-// Listr2 - Prefix-Agnostic Directory Index //
+// r2-secure-dir-indexer - Prefix-Agnostic Directory Index //
 // Original Author: xolyn (https://github.com/xolyn/listr2)
 // Modified by: Jeff Parrish PC Services (jpps.us) & Google Gemini
 //---------------------------------------//
@@ -98,6 +98,99 @@ const TRANSLATIONS = {
         image: "图片文件",
         docs: "文档文件",
         na: "不可用"
+    },
+    // French (New)
+    fr: {
+        baseTitle: "Fichiers de Support JPPS",
+        currentPath: "Chemin Actuel:",
+        refreshButton: "Actualiser",
+        folders: "dossiers",
+        files: "fichiers",
+        nameCol: "Nom",
+        sizeCol: "Taille",
+        timeCol: "Dernière Modification",
+        parentDir: ".. (Dossier Parent)",
+        accessDeniedTitle: "🛑 Accès Refusé (403)",
+        accessDeniedBody1: "Le jeton d'accès fourni est manquant ou invalide.",
+        accessDeniedBody2: "Veuillez vous assurer d'utiliser l'URL correcte avec un jeton valide.",
+        methodNotAllowed: "Méthode Non Autorisée: Les opérations de gestion (Téléchargement, Suppression, Déplacement) sont désactivées.",
+        iconKey: "Clé d'Icônes:",
+        genericFile: "Fichier Générique",
+        folder: "Dossier/Répertoire",
+        win: "Windows (.exe, .msi, etc.)",
+        macBase: "Fichier de Base macOS (.dmg, .pkg)",
+        macArm: "Apple Silicon (ARM64)",
+        macIntel: "Architecture Intel (x64)",
+        macUni: "Mac Universel/Non Spécifié",
+        linux: "Linux (.deb, .rpm, etc.)",
+        android: "Android (.apk)",
+        pdf: "Document PDF",
+        archive: "Archive (.zip, .rar, etc.)",
+        image: "Fichiers Image",
+        docs: "Fichiers Document",
+        na: "N/A"
+    },
+    // German (New)
+    de: {
+        baseTitle: "JPPS Support-Dateien",
+        currentPath: "Aktueller Pfad:",
+        refreshButton: "Aktualisieren",
+        folders: "Ordner",
+        files: "Dateien",
+        nameCol: "Name",
+        sizeCol: "Größe",
+        timeCol: "Zuletzt geändert",
+        parentDir: ".. (Übergeordnetes Verzeichnis)",
+        accessDeniedTitle: "🛑 Zugriff verweigert (403)",
+        accessDeniedBody1: "Das bereitgestellte Zugriffstoken fehlt oder ist ungültig.",
+        accessDeniedBody2: "Bitte stellen Sie sicher, dass Sie die korrekte URL mit einem gültigen Token verwenden.",
+        methodNotAllowed: "Methode nicht erlaubt: Verwaltungsoperationen (Hochladen, Löschen, Verschieben) sind deaktiviert.",
+        iconKey: "Symbolschlüssel:",
+        genericFile: "Allgemeine Datei",
+        folder: "Ordner/Verzeichnis",
+        win: "Windows (.exe, .msi, etc.)",
+        macBase: "macOS Basisdatei (.dmg, .pkg)",
+        macArm: "Apple Silicon (ARM64)",
+        macIntel: "Intel-Architektur (x64)",
+        macUni: "Universal/Nicht spezifizierter Mac",
+        linux: "Linux (.deb, .rpm, etc.)",
+        android: "Android (.apk)",
+        pdf: "PDF-Dokument",
+        archive: "Archiv (.zip, .rar, etc.)",
+        image: "Bilddateien",
+        docs: "Dokumentdateien",
+        na: "N/A"
+    },
+    // Russian (New)
+    ru: {
+        baseTitle: "Файлы поддержки JPPS",
+        currentPath: "Текущий путь:",
+        refreshButton: "Обновить",
+        folders: "папки",
+        files: "файлы",
+        nameCol: "Имя",
+        sizeCol: "Размер",
+        timeCol: "Последнее изменение",
+        parentDir: ".. (Родительский каталог)",
+        accessDeniedTitle: "🛑 Доступ запрещен (403)",
+        accessDeniedBody1: "Предоставленный токен доступа отсутствует или недействителен.",
+        accessDeniedBody2: "Убедитесь, что вы используете правильный URL с действительным токеном.",
+        methodNotAllowed: "Метод не разрешен: Операции управления (загрузка, удаление, перемещение) отключены.",
+        iconKey: "Ключ значков:",
+        genericFile: "Общий файл",
+        folder: "Папка/Каталог",
+        win: "Windows (.exe, .msi и т. д.)",
+        macBase: "Базовый файл macOS (.dmg, .pkg)",
+        macArm: "Apple Silicon (ARM64)",
+        macIntel: "Архитектура Intel (x64)",
+        macUni: "Универсальный/Неуказанный Mac",
+        linux: "Linux (.deb, .rpm и т. д.)",
+        android: "Android (.apk)",
+        pdf: "Документ PDF",
+        archive: "Архив (.zip, .rar и т. д.)",
+        image: "Файлы изображений",
+        docs: "Файлы документов",
+        na: "Н/Д"
     }
 };
 
@@ -300,7 +393,7 @@ export default {
         table { 
             width: 100%; 
             border-collapse: separate; 
-            border-spacing: 0;
+            border-spacing: 0; 
             table-layout: fixed; 
             border-radius: 8px;
             overflow: hidden; 
@@ -434,8 +527,6 @@ export default {
 // --- CORE SECURITY FUNCTIONS (Dynamic Recursive CaseMap) ---
 // ---
 
-// ... (generateCaseMap and getHighestAuthorizedScope remain unchanged as they are language-agnostic) ...
-
 /**
  * Creates a comprehensive case map by recursively listing all delimited prefixes (folders) 
  * in the R2 bucket. This is done using an iterative queue to prevent deep recursion issues.
@@ -512,6 +603,24 @@ async function getHighestAuthorizedScope(env, queryToken) {
 
 
 // --- UTILITY FUNCTIONS ---
+
+function formatSize(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+/**
+ * @param {Date | null} date 
+ * @param {Object} T - The translation object.
+ */
+function formatTime(date, T) {
+  if (!date) return T.na;
+  return date.toISOString().slice(0, 19).replace('T', ' '); 
+}
+
 
 /**
  * Maps common file extensions to OS-specific icons and classes,
@@ -674,24 +783,6 @@ function handleUnauthorizedAccess(T) {
 
 // --- RENDER & HELPER FUNCTIONS ---
 
-function formatSize(bytes) {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-/**
- * @param {Date | null} date 
- * @param {Object} T - The translation object.
- */
-function formatTime(date, T) {
-  if (!date) return T.na;
-  return date.toISOString().slice(0, 19).replace('T', ' '); 
-}
-
-
 async function renderTree(bucket, prefix, rootUrl = null, tokenParam = '', highestScope = '', T) {
   let totalFiles = 0, totalDirs = 0;
 
@@ -800,8 +891,6 @@ async function renderTree(bucket, prefix, rootUrl = null, tokenParam = '', highe
   return { html: result.html, totalFiles: result.fileCount, totalDirs: totalDirs };
 }
 
-
-// ... (getScopeDisplayName, escapeHtml, and parentPrefix remain unchanged as they are language-agnostic) ...
 
 function getScopeDisplayName(prefix) {
     if (!prefix || prefix === "") {
