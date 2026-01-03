@@ -1,0 +1,10 @@
+{
+  "name": "r2-secure-dir-indexer",
+  "keywords": [
+    "cloudflare",
+    "worker",
+    "r2",
+    "directory-index",
+    "security"
+  ]
+}
