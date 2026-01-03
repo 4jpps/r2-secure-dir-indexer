@@ -1,47 +1,35 @@
 # 📄 README2.md: Key Differences from Original Listr2
 
-This document highlights the major feature, security, and UI enhancements implemented in **`r2-secure-dir-indexer`** compared to the original `listr2` Worker.
-
----
-
-## 🔒 Security and Access Control
-
-| Feature | Original Listr2 | r2-secure-dir-indexer (Your Fork) | Significance |
-| --- | --- | --- | --- |
-| **Auth Model** | **Basic Auth:** Uses standard HTTP Basic Authentication (`USERNAME`/`PASSWORD`). | **Token-Based Auth:** Uses URL query parameters (`?token=...`) linked to environment secrets (`TOKEN_...`). | **Granular Security:** Enables sharing specific folders with specific clients without global credentials. |
-| **Enforcement** | No scope enforcement. The entire bucket is navigable once logged in. | **Hierarchical Scoping:** Users are "caged" within the prefix defined by their token. They cannot navigate "up" past their root. | **Multi-Tenancy:** Safely host files for multiple different clients in one R2 bucket. |
-| **Operations** | Supports `DELETE`, `UPLOAD`, and `MOVE` via `POST`. | **Read-Only Enforced:** Blocks all `POST` requests with a **405 Method Not Allowed**. | **Immutable Repo:** Prevents accidental or malicious modification of support assets. |
-| **Error Handling** | Standard browser 401/403 prompts. | **Branded 403 Page:** A custom-styled, localized "Access Denied" page. | Professional feedback for expired or invalid tokens. |
-
----
-
-## 🌍 Language and Internationalization
-
-| Feature | Original Listr2 | r2-secure-dir-indexer (Your Fork) | Significance |
-| --- | --- | --- | --- |
-| **Language** | Hardcoded English. | **Dynamic Auto-Detection:** Detects browser `Accept-Language` header. | **Global Support:** Automatically serves UI in English, Spanish, Chinese, French, German, or Russian. |
-| **Timestamps** | Server-side string. | **Client-Side Localization:** Formats dates via JavaScript `toLocaleString()`. | **Accuracy:** Timestamps match the user's local timezone and regional date format. |
+This document highlights the major feature, security, and UI logic changes implemented in **`r2-secure-dir-indexer`** compared to the original `listr2` Worker.
 
 ---
 
 ## 🖥️ User Experience and Visuals
 
-| Feature | Original Listr2 | r2-secure-dir-indexer (Your Fork) | Significance |
+| Feature | Original Listr2 | r2-secure-dir-indexer (Current) | Significance |
 | --- | --- | --- | --- |
-| **UI Design** | Basic HTML Table. | **Modern Glassmorphism:** Translucent panels, blur effects, and radial gradients. | High-end, professional appearance for client-facing support portals. |
-| **Theme** | Single fixed theme. | **Dark/Light/System Mode:** Users can toggle themes; preference is saved to `localStorage`. | Accessibility and user comfort. |
-| **Icons** | Simple generic emojis (`📄`, `📁`). | **SVG Architecture Icons:** Specialized icons for **Windows, Linux, Android, and Mac (ARM vs Intel)**. | **Instructive Value:** Helps users download the correct version for their specific hardware (e.g., M1 vs Intel Mac). |
-| **Sorting** | Simple alphabetical. | **Type-First Sorting:** Folders first, then files grouped by extension/category. | **Scannability:** Groups all installers together, followed by PDFs, then images. |
-| **Visibility** | Size/Date on hover only. | **Dedicated Columns:** Size and Modified Date are always visible in the table. | Faster comparison of file versions. |
-| **Helpfulness** | No legend. | **Icon Legend:** A dedicated "Support Legend" panel explaining architecture and file type icons. | Ensures non-technical users pick the right installer. |
+| **Icon Legend** | None. | **Dynamic & Contextual:** Only shows icons relevant to the files currently visible in the directory. | Reduces visual noise; only explains what the user actually sees. |
+| **Media Detection** | Generic file icons. | **Rich Media & OS Detection:** Specialized icons for Video, Audio, and specific hardware architectures (ARM64 vs Intel). | Professional classification of support assets; prevents users from downloading the wrong architecture. |
+| **UI Design** | Basic HTML table. | **Glassmorphism:** Modern responsive design with translucent panels and blur effects. | Provides a premium, enterprise-grade aesthetic for client-facing portals. |
+| **Theme Support** | Single fixed theme. | **Tri-Theme Logic:** Persisted Light, Dark, and System-preference sync. | Improved accessibility and user comfort for long-term use. |
+| **Metadata** | Hover-only (HTML title). | **Dedicated Columns:** File size and modified dates are always visible. | Faster scanning and comparison of file versions. |
 
 ---
 
-## ⚙️ Core Logic and Deployment
+## 🔒 Security and Access Logic
 
-| Feature | Original Listr2 | r2-secure-dir-indexer (Your Fork) | Significance |
+| Feature | Original Listr2 | r2-secure-dir-indexer (Current) | Significance |
 | --- | --- | --- | --- |
-| **Path Casing** | Case-sensitive (requires exact match). | **Dynamic Case Mapping:** Resolves tokens to R2 paths regardless of mixed-casing in the bucket. | **Reliability:** Prevents "Folder Not Found" errors caused by inconsistent naming conventions in R2. |
-| **URL Cleanup** | Long query strings. | **Automatic Redirects:** Redirects to clean `/?token=...` when at the root of an authorized scope. | **Simpler Sharing:** Cleaner links for support tickets and emails. |
-| **Deployment** | Manual dashboard config. | **Wrangler Secret Workflow:** Optimized for CLI deployment and secure secret management. | **DevOps:** Better security for API keys and tokens. |
+| **Authentication** | HTTP Basic Auth. | **Token-Based Auth:** Query parameter tokens (`?token=...`) linked to secrets. | Enables sharing specific folders via unique links without global credentials. |
+| **Scoping** | Global bucket access. | **Strict Prefix Caging:** Users are locked into the folder tree defined by their token. | Enables secure multi-tenancy within a single R2 bucket. |
+| **Operations** | Supports Write/POST. | **Read-Only Enforcement:** Blocks all `POST`, `PUT`, and `DELETE` attempts. | Ensures the repository remains a secure, immutable source of truth. |
+| **Path Casing** | Case-sensitive. | **Dynamic Case Mapping:** Resolves tokens to mixed-case R2 paths automatically. | High reliability even with inconsistent bucket naming conventions. |
 
+---
+
+## 🌍 Internationalization
+
+| Feature | Original Listr2 | r2-secure-dir-indexer (Current) | Significance |
+| --- | --- | --- | --- |
+| **Language** | Hardcoded English. | **Dynamic Auto-Detection:** Uses `Accept-Language` headers for 6 major languages. | Automatically localizes the UI for global users without manual switching. |
+| **Timezones** | Server-side string. | **Client-Side Localization:** Dates are formatted to the user's local timezone. | Prevents confusion regarding when a file was actually uploaded. |
