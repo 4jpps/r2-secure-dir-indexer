@@ -172,7 +172,7 @@ export default {
         // Also performs case-mapping to ensure the Worker can access the real R2 path regardless of case.
         const highestScope = await getHighestAuthorizedScope(env, queryToken); 
 
-        if (highestScope === null) return handleUnauthorizedAccess(t);
+        if (highestScope === null) return handleUnauthorizedAccess(t, langCode);
         
         // Security: Ensure user isn't trying to access a path above their authorized scope
         if (prefix !== "" && !prefix.toLowerCase().startsWith(highestScope.toLowerCase())) {
