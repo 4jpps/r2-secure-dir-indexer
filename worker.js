@@ -436,11 +436,65 @@ async function getHighestAuthorizedScope(env, queryToken) {
 
 /**
  * Standard 403 response for unauthorized users.
+ * Uses the same Glassmorphism design language as the main index.
  */
 function handleUnauthorizedAccess(t) {
-    return new Response(`<html><body style="background:#0f172a; color:white; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
-    <div style="text-align:center; border:1px solid #334155; padding:50px; border-radius:20px; background:#1e293b;">
-    <h1>${t.accessDeniedTitle}</h1><p>${t.accessDeniedBody}</p></div></body></html>`, { status: 403, headers: { "Content-Type": "text/html" } });
+    return new Response(`<!doctype html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>${t.accessDeniedTitle}</title>
+        <style>
+            :root {
+                --ui-gradient: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+                --ui-glass-bg: rgba(20, 20, 25, 0.6); 
+                --ui-glass-border: rgba(255, 255, 255, 0.1);
+                --ui-text-main: #f0f0f0; 
+                --ui-text-muted: #a0a0a0; 
+                --ui-accent: #ff4757;
+                --ui-body-bg: #0f172a;
+            }
+            body { 
+                font-family: 'Inter', system-ui, sans-serif; 
+                margin: 0; 
+                height: 100vh; 
+                background: var(--ui-body-bg); 
+                background-image: var(--ui-gradient); 
+                color: var(--ui-text-main); 
+                display: flex; 
+                justify-content: center; 
+                align-items: center; 
+                padding: 20px;
+                box-sizing: border-box;
+            }
+            .error-card { 
+                width: 100%; 
+                max-width: 500px; 
+                background: var(--ui-glass-bg); 
+                backdrop-filter: blur(20px); 
+                border: 1px solid var(--ui-glass-border); 
+                border-radius: 24px; 
+                padding: 50px 40px; 
+                text-align: center;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); 
+            }
+            h1 { font-size: 2.5em; margin: 0 0 20px 0; color: var(--ui-accent); }
+            p { font-size: 1.1em; line-height: 1.6; color: var(--ui-text-muted); margin: 0; }
+            .brand { margin-top: 30px; font-size: 0.8em; opacity: 0.5; letter-spacing: 0.05em; text-transform: uppercase; }
+        </style>
+    </head>
+    <body>
+        <div class="error-card">
+            <h1>${t.accessDeniedTitle}</h1>
+            <p>${t.accessDeniedBody}</p>
+            <div class="brand">Jeff Parrish PC Services</div>
+        </div>
+    </body>
+    </html>`, { 
+        status: 403, 
+        headers: { "Content-Type": "text/html; charset=utf-8" } 
+    });
 }
 
 // Formatting helpers
