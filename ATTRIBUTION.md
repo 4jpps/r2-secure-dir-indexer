@@ -2,6 +2,8 @@
 
 This document serves to formally acknowledge the original source code and intellectual property upon which the **`r2-secure-dir-indexer`** project is built.
 
+---
+
 ## 💻 Core Source Code
 
 The foundation of this Cloudflare Worker script is derived from the **Listr2** project. The Listr2 script provided the initial structure for interacting with Cloudflare R2, generating the HTML directory listing, and handling basic file rendering logic.
@@ -22,12 +24,12 @@ The **`r2-secure-dir-indexer`** project represents a significant evolution of th
 Key changes and features not present in the original Listr2 include:
 
 * **Token-Based Access Control:** Implementation of `TOKEN_...` secrets for scoped, hierarchical, and authenticated access via URL parameters.
+* **Contextual Support Legend:** A dynamic UI component that intelligently displays only the icons relevant to the files currently visible in the directory.
 * **Dynamic Case Mapping:** Recursive scanning logic to resolve case-sensitive R2 paths against uppercase environment variables.
 * **Security Enforcement:** Mandatory read-only state, blocking all write/management operations (`POST` requests).
 * **UI/UX Overhaul:** A modern **Glassmorphism design** featuring Light, Dark, and System theme persistence.
 * **Multi-Language Support:** Automatic detection and rendering of UI in English, Spanish, Chinese, French, German, and Russian.
-* **Architecture-Specific Icons:** Advanced detection logic to distinguish between **Apple Silicon (ARM64)** and **Intel (x64)** binaries.
-* **Clean URL Management:** Logic for redirecting redundant `prefix` parameters to provide shorter, shareable links.
+* **Architecture & Media Detection:** Advanced detection logic to distinguish between **Apple Silicon (ARM64)** vs **Intel (x64)**, as well as specialized icons for Video and Audio assets.
 
 ---
 
