@@ -438,9 +438,13 @@ async function getHighestAuthorizedScope(env, queryToken) {
  * Standard 403 response for unauthorized users.
  * Uses the same Glassmorphism design language as the main index.
  */
-function handleUnauthorizedAccess(t) {
+/**
+ * Standard 403 response for unauthorized users.
+ * Uses the same Glassmorphism design language and dynamic localization.
+ */
+function handleUnauthorizedAccess(t, langCode) {
     return new Response(`<!doctype html>
-    <html lang="en">
+    <html lang="${langCode}">
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
