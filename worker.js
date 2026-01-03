@@ -4,11 +4,6 @@
 // Modified by: Jeff Parrish PC Services (jpps.us), Google Gemini, & Microsoft Copilot
 //---------------------------------------//
 
-/**
- * TRANSLATIONS
- * A dictionary supporting multi-language UI. 
- * The system detects the 'Accept-Language' header from the browser to choose the best fit.
- */
 const TRANSLATIONS = {
     en: {
         baseTitle: "JPPS Support Files",
@@ -32,9 +27,11 @@ const TRANSLATIONS = {
         pdf: "PDF Document",
         archive: "Archive (Zip/7z)",
         docs: "Office/Text Document",
-        image: "Image File"
+        image: "Image File",
+        video: "Video File",
+        audio: "Audio Recording"
     },
-    es: { /* Spanish */
+    es: {
         baseTitle: "Archivos de Soporte JPPS",
         currentPath: "Ruta Actual:",
         refreshButton: "Actualizar",
@@ -56,9 +53,11 @@ const TRANSLATIONS = {
         pdf: "Documento PDF",
         archive: "Archivo Comprimido",
         docs: "Documento de Texto",
-        image: "Imagen"
+        image: "Imagen",
+        video: "Archivo de Video",
+        audio: "Audio"
     },
-    zh: { /* Chinese Simplified */
+    zh: {
         baseTitle: "JPPS 支持文件",
         currentPath: "当前路径:",
         refreshButton: "刷新列表",
@@ -80,9 +79,11 @@ const TRANSLATIONS = {
         pdf: "PDF 文档",
         archive: "压缩档案",
         docs: "办公/文本文件",
-        image: "图像文件"
+        image: "图像文件",
+        video: "视频文件",
+        audio: "音频文件"
     },
-    fr: { /* French */
+    fr: {
         baseTitle: "Fichiers de Support JPPS",
         currentPath: "Chemin Actuel:",
         refreshButton: "Actualiser",
@@ -104,9 +105,11 @@ const TRANSLATIONS = {
         pdf: "Document PDF",
         archive: "Archive (Zip/7z)",
         docs: "Document Texte",
-        image: "Fichier Image"
+        image: "Fichier Image",
+        video: "Fichier Vidéo",
+        audio: "Fichier Audio"
     },
-    de: { /* German */
+    de: {
         baseTitle: "JPPS Support-Dateien",
         currentPath: "Aktueller Pfad:",
         refreshButton: "Aktualisieren",
@@ -128,9 +131,11 @@ const TRANSLATIONS = {
         pdf: "PDF-Dokument",
         archive: "Archiv (Zip/7z)",
         docs: "Dokument",
-        image: "Bilddatei"
+        image: "Bilddatei",
+        video: "Videodatei",
+        audio: "Audiodatei"
     },
-    ru: { /* Russian */
+    ru: {
         baseTitle: "Файлы поддержки JPPS",
         currentPath: "Текущий путь:",
         refreshButton: "Обновить",
@@ -152,7 +157,9 @@ const TRANSLATIONS = {
         pdf: "Документ PDF",
         archive: "Архив (Zip/7z)",
         docs: "Документ",
-        image: "Изображение"
+        image: "Изображение",
+        video: "Видео",
+        audio: "Аудио"
     }
 };
 
@@ -162,29 +169,22 @@ export default {
         let prefix = url.searchParams.get("prefix") ?? "";
         const queryToken = url.searchParams.get("token");
         
-        // 1. Language Detection
         const langHeader = request.headers.get("Accept-Language") || "en";
         const langCode = langHeader.split(',')[0].split('-')[0].toLowerCase();
         const t = TRANSLATIONS[langCode] || TRANSLATIONS.en;
 
-        // 2. Authorization Check
-        // Checks environment variables (TOKEN_...) for a match with the URL's ?token= value.
-        // Also performs case-mapping to ensure the Worker can access the real R2 path regardless of case.
         const highestScope = await getHighestAuthorizedScope(env, queryToken); 
 
         if (highestScope === null) return handleUnauthorizedAccess(t, langCode);
         
-        // Security: Ensure user isn't trying to access a path above their authorized scope
         if (prefix !== "" && !prefix.toLowerCase().startsWith(highestScope.toLowerCase())) {
-            return handleUnauthorizedAccess(t);
+            return handleUnauthorizedAccess(t, langCode);
         }
         if (prefix === "") prefix = highestScope;
 
-        // 3. Raw File Serving
-        // If path starts with /raw/, serve the file directly from R2 with appropriate metadata
         if (url.pathname.startsWith("/raw/")) {
             const key = decodeURIComponent(url.pathname.slice(5));
-            if (!key.toLowerCase().startsWith(highestScope.toLowerCase())) return handleUnauthorizedAccess(t);
+            if (!key.toLowerCase().startsWith(highestScope.toLowerCase())) return handleUnauthorizedAccess(t, langCode);
             const obj = await env.R2.get(key, { onlyIf: {} });
             if (!obj) return new Response("Not Found", { status: 404 });
             const headers = new Headers();
@@ -193,15 +193,13 @@ export default {
             return new Response(obj.body, { headers });
         }
     
-        // 4. Data Gathering
         const folderName = getScopeDisplayName(highestScope);
         const displayTitle = highestScope === "" ? t.baseTitle : `${t.baseTitle} (${folderName})`;
         const tokenParam = queryToken ? `&token=${encodeURIComponent(queryToken)}` : '';
         
-        // Fetch folder structure and file list from R2
-        const { html, totalFiles, totalDirs } = await renderTree(env.R2, prefix, env.ROOT, tokenParam, highestScope, t);
+        // Fetch data and track active icons for the legend
+        const { html, totalFiles, totalDirs, activeIcons } = await renderTree(env.R2, prefix, env.ROOT, tokenParam, highestScope, t);
     
-        // 5. Build Navigation (Parent Directory)
         let parentHtml = "";
         const parentPfx = parentPrefix(prefix);
         if (prefix.toLowerCase() !== highestScope.toLowerCase() && prefix !== "") {
@@ -209,11 +207,31 @@ export default {
             parentHtml = `<tr class="dir-row"><td colspan="3"><span class="icon-wrap">${getIcon('up')}</span> <a href="${parentLinkUrl}" class="file-link">${t.parentDir}</a></td></tr>`;
         }
 
-        // Clean up the path display for the user (strip their root prefix)
         const currentPathDisplay = prefix.replace(new RegExp(`^${highestScope}`, 'i'), "");
         const pathHeadingHtml = currentPathDisplay ? `<h2>${t.currentPath} /${escapeHtml(currentPathDisplay)}</h2>` : '';
         
-        // 6. Final HTML Rendering
+        // Build the dynamic legend
+        const legendItems = [
+            { id: 'folder', label: t.folder },
+            { id: 'windows', label: t.win },
+            { id: 'arm', label: t.macArm },
+            { id: 'intel', label: t.macIntel },
+            { id: 'linux', label: t.linux },
+            { id: 'android', label: t.android },
+            { id: 'pdf', label: t.pdf },
+            { id: 'archive', label: t.archive },
+            { id: 'docs', label: t.docs },
+            { id: 'image', label: t.image },
+            { id: 'video', label: t.video },
+            { id: 'audio', label: t.audio }
+        ].filter(item => activeIcons.has(item.id))
+         .map(item => `<li><span class="icon-wrap">${getIcon(item.id)}</span> ${item.label}</li>`)
+         .join('');
+
+        const legendHtml = legendItems 
+            ? `<div class="glass-panel"><h3>${t.iconKey}</h3><ul>${legendItems}</ul></div>` 
+            : '';
+
         const page = `<!doctype html>
         <html lang="${langCode}">
         <head>
@@ -271,19 +289,7 @@ export default {
             <thead><tr><th>${t.nameCol}</th><th>${t.sizeCol}</th><th>${t.timeCol}</th></tr></thead>
             <tbody>${parentHtml}${html}</tbody>
           </table>
-          <div class="glass-panel">
-            <h3>${t.iconKey}</h3>
-            <ul>
-              <li><span class="icon-wrap">${getIcon('folder')}</span> ${t.folder}</li>
-              <li><span class="icon-wrap">${getIcon('windows')}</span> ${t.win}</li>
-              <li><span class="icon-wrap">${getIcon('arm')}</span> ${t.macArm}</li>
-              <li><span class="icon-wrap">${getIcon('intel')}</span> ${t.macIntel}</li>
-              <li><span class="icon-wrap">${getIcon('linux')}</span> ${t.linux}</li>
-              <li><span class="icon-wrap">${getIcon('pdf')}</span> ${t.pdf}</li>
-              <li><span class="icon-wrap">${getIcon('archive')}</span> ${t.archive}</li>
-              <li><span class="icon-wrap">${getIcon('image')}</span> ${t.image}</li>
-            </ul>
-          </div>
+          ${legendHtml}
           <footer>
             &copy; ${new Date().getFullYear()} <a href="https://www.jpps.us" target="_blank">Jeff Parrish PC Services</a><br>
             Built with <a href="https://github.com/xolyn/listr2" target="_blank">Listr2</a>, 
@@ -292,7 +298,6 @@ export default {
           </footer>
         </div>
         <script>
-            // Apply theme and save preference to localStorage
             function applyTheme(t){
                 const h=document.documentElement;
                 if(t==='system') h.setAttribute('data-theme', window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
@@ -300,12 +305,9 @@ export default {
                 localStorage.setItem('theme', t);
                 document.getElementById('themeSelect').value = t;
             }
-            
-            // Initialization: Load saved theme
             const saved = localStorage.getItem('theme') || 'system';
             applyTheme(saved);
 
-            // Localization: Format timestamps on the client side based on user's local timezone
             document.addEventListener("DOMContentLoaded", function () {
                 const opts = { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" };
                 document.querySelectorAll(".lm").forEach(function (cell) {
@@ -325,9 +327,6 @@ export default {
 
 // --- ICONS & HELPERS ---
 
-/**
- * Returns SVG path for a given UI component.
- */
 function getIcon(type) {
     const svgs = {
         folder: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>',
@@ -339,6 +338,8 @@ function getIcon(type) {
         pdf: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
         archive: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8M1 3h22v5H1V3ZM10 12h4"/></svg>',
         image: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+        video: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>',
+        audio: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
         docs: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
         file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/></svg>',
         up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>'
@@ -346,37 +347,37 @@ function getIcon(type) {
     return svgs[type] || svgs.file;
 }
 
-/**
- * Intelligent file extension to icon mapping.
- * Handles specialized logic like detecting Mac ARM vs Intel based on filename patterns.
- */
 function getFileOSIcon(fileName) {
     const n = fileName.toLowerCase();
     const ext = n.split('.').pop();
-    let icons = [];
+    let types = [];
 
     if (ext === 'dmg' || ext === 'pkg') {
-        if (n.includes('arm64') || n.includes('apple') || n.includes('m1') || n.includes('m2')) icons.push(getIcon('arm'));
-        else if (n.includes('x64') || n.includes('intel')) icons.push(getIcon('intel'));
-        else icons.push(getIcon('file'));
-    } else if (['exe', 'msi'].includes(ext)) icons.push(getIcon('windows'));
-    else if (['deb', 'rpm', 'sh'].includes(ext)) icons.push(getIcon('linux'));
-    else if (ext === 'apk') icons.push(getIcon('android'));
-    else if (ext === 'pdf') icons.push(getIcon('pdf'));
-    else if (['zip', '7z', 'rar'].includes(ext)) icons.push(getIcon('archive'));
-    else if (['jpg', 'png', 'svg', 'webp', 'jpeg'].includes(ext)) icons.push(getIcon('image'));
-    else if (['doc', 'docx', 'txt', 'rtf'].includes(ext)) icons.push(getIcon('docs'));
-    else icons.push(getIcon('file'));
+        if (n.includes('arm64') || n.includes('apple') || n.includes('m1') || n.includes('m2')) types.push('arm');
+        else if (n.includes('x64') || n.includes('intel')) types.push('intel');
+        else types.push('file');
+    } 
+    else if (['exe', 'msi'].includes(ext)) types.push('windows');
+    else if (['deb', 'rpm', 'sh'].includes(ext)) types.push('linux');
+    else if (ext === 'apk') types.push('android');
+    else if (ext === 'pdf') types.push('pdf');
+    else if (['zip', '7z', 'rar'].includes(ext)) types.push('archive');
+    else if (['jpg', 'png', 'svg', 'webp', 'jpeg'].includes(ext)) types.push('image');
+    else if (['mp4', 'mkv', 'mov', 'avi'].includes(ext)) types.push('video');
+    else if (['mp3', 'wav', 'flac', 'm4a'].includes(ext)) types.push('audio');
+    else if (['doc', 'docx', 'txt', 'rtf'].includes(ext)) types.push('docs');
+    else types.push('file');
 
-    return icons.map(i => `<span class="icon-wrap">${i}</span>`).join('');
+    return {
+        iconsHtml: types.map(t => `<span class="icon-wrap">${getIcon(t)}</span>`).join(''),
+        types: types
+    };
 }
 
-/**
- * Renders the directory tree by listing objects in the R2 bucket.
- * Sorts directories first, then files alphabetically.
- */
 async function renderTree(bucket, prefix, rootUrl, tokenParam, highestScope, t) {
     let files = [], dirs = [], cursor;
+    const activeIcons = new Set();
+
     do {
         const page = await bucket.list({ prefix, delimiter: "/", cursor });
         cursor = page.truncated ? page.cursor : undefined;
@@ -390,27 +391,24 @@ async function renderTree(bucket, prefix, rootUrl, tokenParam, highestScope, t) 
         }
     } while (cursor);
 
-    // Render Folders
+    if (dirs.length > 0) activeIcons.add('folder');
+
     let levelHtml = dirs.sort((a,b)=>a.name.localeCompare(b.name)).map(d => {
         const lp = d.prefix.toLowerCase() === highestScope.toLowerCase() ? "" : `prefix=${encodeURIComponent(d.prefix)}`;
         return `<tr class="dir-row"><td><span class="icon-wrap">${getIcon('folder')}</span> <a href="/?${lp}${tokenParam}" class="file-link">${escapeHtml(d.name)}/</a></td><td>--</td><td>--</td></tr>`;
     }).join("");
 
-    // Render Files
     levelHtml += files.sort((a,b)=>a.name.localeCompare(b.name)).map(f => {
+        const result = getFileOSIcon(f.name);
+        result.types.forEach(type => activeIcons.add(type));
+        
         const href = rootUrl ? `${rootUrl.replace(/\/$/, '')}/${f.key}` : `/raw/${encodeURIComponent(f.key)}`;
-        return `<tr><td><div class="file-link"><span>${getFileOSIcon(f.name)}</span><a href="${href}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">${escapeHtml(f.name)}</a></div></td><td>${formatSize(f.size)}</td><td class="lm" data-ts="${f.time.toISOString()}"></td></tr>`;
+        return `<tr><td><div class="file-link"><span>${result.iconsHtml}</span><a href="${href}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">${escapeHtml(f.name)}</a></div></td><td>${formatSize(f.size)}</td><td class="lm" data-ts="${f.time.toISOString()}"></td></tr>`;
     }).join("");
 
-    return { html: levelHtml, totalFiles: files.length, totalDirs: dirs.length };
+    return { html: levelHtml, totalFiles: files.length, totalDirs: dirs.length, activeIcons };
 }
 
-/**
- * Authorization Logic:
- * Scans env variables starting with "TOKEN_" to find one matching the provided queryToken.
- * Maps the variable name (e.g., TOKEN_APPS_TOOLS_) to a real R2 path (apps/tools/).
- * Case-mapping: Lists R2 directories to find the exact casing of the path.
- */
 async function getHighestAuthorizedScope(env, queryToken) {
     if (!queryToken) return null;
     let rawScope = null;
@@ -422,8 +420,6 @@ async function getHighestAuthorizedScope(env, queryToken) {
     }
     if (rawScope === null) return null;
     if (rawScope === "") return "";
-    
-    // Exact case matching for the storage layer
     let corrected = "";
     const parts = rawScope.split('/').filter(p => p !== "");
     for (const p of parts) {
@@ -434,55 +430,20 @@ async function getHighestAuthorizedScope(env, queryToken) {
     return corrected;
 }
 
-/**
- * Standard 403 response for unauthorized users.
- * Uses the same Glassmorphism design language as the main index.
- */
-/**
- * Standard 403 response for unauthorized users.
- * Uses the same Glassmorphism design language and dynamic localization.
- */
 function handleUnauthorizedAccess(t, langCode) {
     return new Response(`<!doctype html>
     <html lang="${langCode}">
     <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
         <title>${t.accessDeniedTitle}</title>
         <style>
             :root {
                 --ui-gradient: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
-                --ui-glass-bg: rgba(20, 20, 25, 0.6); 
-                --ui-glass-border: rgba(255, 255, 255, 0.1);
-                --ui-text-main: #f0f0f0; 
-                --ui-text-muted: #a0a0a0; 
-                --ui-accent: #ff4757;
-                --ui-body-bg: #0f172a;
+                --ui-glass-bg: rgba(20, 20, 25, 0.6); --ui-glass-border: rgba(255, 255, 255, 0.1);
+                --ui-text-main: #f0f0f0; --ui-text-muted: #a0a0a0; --ui-accent: #ff4757; --ui-body-bg: #0f172a;
             }
-            body { 
-                font-family: 'Inter', system-ui, sans-serif; 
-                margin: 0; 
-                height: 100vh; 
-                background: var(--ui-body-bg); 
-                background-image: var(--ui-gradient); 
-                color: var(--ui-text-main); 
-                display: flex; 
-                justify-content: center; 
-                align-items: center; 
-                padding: 20px;
-                box-sizing: border-box;
-            }
-            .error-card { 
-                width: 100%; 
-                max-width: 500px; 
-                background: var(--ui-glass-bg); 
-                backdrop-filter: blur(20px); 
-                border: 1px solid var(--ui-glass-border); 
-                border-radius: 24px; 
-                padding: 50px 40px; 
-                text-align: center;
-                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); 
-            }
+            body { font-family: 'Inter', system-ui, sans-serif; margin: 0; height: 100vh; background: var(--ui-body-bg); background-image: var(--ui-gradient); color: var(--ui-text-main); display: flex; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+            .error-card { width: 100%; max-width: 500px; background: var(--ui-glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--ui-glass-border); border-radius: 24px; padding: 50px 40px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
             h1 { font-size: 2.5em; margin: 0 0 20px 0; color: var(--ui-accent); }
             p { font-size: 1.1em; line-height: 1.6; color: var(--ui-text-muted); margin: 0; }
             .brand { margin-top: 30px; font-size: 0.8em; opacity: 0.5; letter-spacing: 0.05em; text-transform: uppercase; }
@@ -495,13 +456,9 @@ function handleUnauthorizedAccess(t, langCode) {
             <div class="brand">Jeff Parrish PC Services</div>
         </div>
     </body>
-    </html>`, { 
-        status: 403, 
-        headers: { "Content-Type": "text/html; charset=utf-8" } 
-    });
+    </html>`, { status: 403, headers: { "Content-Type": "text/html; charset=utf-8" } });
 }
 
-// Formatting helpers
 function getScopeDisplayName(p) { return p ? p.replace(/\/$/, "").split('/').pop() : ""; }
 function formatSize(b) { if (!b) return '0 B'; const k=1024, s=['B','KB','MB','GB','TB'], i=Math.floor(Math.log(b)/Math.log(k)); return parseFloat((b/Math.pow(k,i)).toFixed(2))+' '+s[i]; }
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
