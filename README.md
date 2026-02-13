@@ -91,8 +91,8 @@ wrangler deploy
 | 🪟 | Windows | .exe, .msi |
 | 🐧 | Linux | .deb, .rpm, .sh |
 | 🤖 | Android | .apk |
-| 💻 ARM | Mac ARM (Silicon) | .dmg, .pkg (with arm64/m1/m2 in filename) |
-| 💻 x64 | Mac Intel | .dmg, .pkg (with x64/intel in filename) |
+| 💻 Apple Silicon | Mac ARM (Apple Silicon) | .dmg, .pkg (with arm64/m1/m2 in filename) |
+| 💻 Intel | Mac Intel | .dmg, .pkg (with x64/intel in filename) |
 | 📄 | PDF | .pdf |
 | 🗜️ | Archive | .zip, .7z, .rar |
 | 📝 | Documents | .doc, .docx, .txt, .rtf |
