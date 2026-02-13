@@ -88,7 +88,8 @@ wrangler deploy
 
 | Icon | Type | Extensions |
 |------|------|------------|
-| 🪟 | Windows | .exe, .msi |
+| 🪟 x64 | Windows Installer (64-bit) | .msi |
+| 🪟 x86 | Windows Installer (32-bit) | .exe |
 | 🐧 | Linux | .deb, .rpm, .sh |
 | 🤖 | Android | .apk |
 | 💻 Apple Silicon | Mac ARM (Apple Silicon) | .dmg, .pkg (with arm64/m1/m2 in filename) |
