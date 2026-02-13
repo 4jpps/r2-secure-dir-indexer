@@ -47,10 +47,16 @@ This document highlights the major feature, security, and UI logic changes imple
 
 | Feature | Original Listr2 | r2-secure-dir-indexer (Current) | Significance |
 | --- | --- | --- | --- |
+| **Code Organization** | Single unstructured file. | **Clear Sections with JSDoc:** Configuration, Authentication, Rendering, Utilities, and Main Handler with comprehensive documentation. | Dramatically improves maintainability, debugging, and onboarding for new developers. |
+| **Security Headers** | None. | **Industry-Standard Headers:** X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy. | Protects against XSS, clickjacking, MIME-sniffing attacks, and unauthorized access. |
+| **Error Handling** | Generic errors. | **Comprehensive Error System:** Try-catch wrapper, localized error pages in 6 languages, console logging for debugging. | Better user experience and faster troubleshooting for administrators. |
+| **Performance Caching** | None. | **Configurable Cache Strategy:** 5-minute directory listing cache, 1-hour static asset cache, Cache-Control headers. | Reduces server load and improves response times for frequently accessed directories. |
 | **Table Layout** | Auto-sizing. | **Fixed Layout with Optimized Widths:** Name (50%), Size (20%), Modified (30%) with 120px icon containers. | Consistent alignment, prevents layout shift, accommodates longer icon labels. |
 | **Icon Container** | Center-aligned. | **Left-aligned with min-width:** Icons align consistently even with subscript text like "Apple Silicon". | Professional appearance with clean vertical icon column. |
 | **JavaScript Updates** | Static timestamps. | **Live Updating Timestamps:** Relative times refresh every minute client-side. | Users see accurate "X minutes ago" without manual refresh. |
 | **Translation Embedding** | None. | **Full Translation Object in HTML:** Enables client-side localization with 200+ translated strings. | Offline-capable, consistent translations, no additional API calls. |
+| **File Format Support** | Basic extensions. | **Extended Format Detection:** Additional archive formats (.tar, .gz, .bz2), image formats (.gif, .bmp), video formats (.webm, .flv), audio formats (.ogg, .aac). | Comprehensive support for modern file types. |
+| **Directory Safety** | Unlimited. | **Size Limit Protection:** Maximum 10,000 items per directory with safety warnings. | Prevents worker timeouts and memory issues with huge directories. |
 
 ---
 
