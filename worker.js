@@ -19,7 +19,8 @@ const TRANSLATIONS = {
         accessDeniedBody: "A valid security token is required to access the JPPS Support Files repository.",
         iconKey: "Support Legend",
         folder: "Folder",
-        win: "Windows Installer",
+        winX64: "Windows Installer (x64)",
+        winX86: "Windows Installer (x86)",
         macArm: "Mac ARM (Silicon)",
         macIntel: "Mac Intel (x64)",
         linux: "Linux Package",
@@ -58,7 +59,8 @@ const TRANSLATIONS = {
         accessDeniedBody: "Se requiere un token de seguridad válido para acceder al repositorio.",
         iconKey: "Leyenda de Soporte",
         folder: "Carpeta",
-        win: "Instalador de Windows",
+        winX64: "Instalador de Windows (x64)",
+        winX86: "Instalador de Windows (x86)",
         macArm: "Mac ARM (Silicon)",
         macIntel: "Mac Intel (x64)",
         linux: "Paquete Linux",
@@ -97,7 +99,8 @@ const TRANSLATIONS = {
         accessDeniedBody: "访问 JPPS 支持文件库需要有效的安全令牌。",
         iconKey: "图标说明",
         folder: "文件夹",
-        win: "Windows 安装程序",
+        winX64: "Windows 安装程序 (x64)",
+        winX86: "Windows 安装程序 (x86)",
         macArm: "Mac ARM (芯片)",
         macIntel: "Mac Intel (x64)",
         linux: "Linux 软件包",
@@ -136,7 +139,8 @@ const TRANSLATIONS = {
         accessDeniedBody: "Un jeton de sécurité valide est requis pour accéder au dépôt JPPS.",
         iconKey: "Légende des Icônes",
         folder: "Dossier",
-        win: "Installateur Windows",
+        winX64: "Installateur Windows (x64)",
+        winX86: "Installateur Windows (x86)",
         macArm: "Mac ARM (Silicon)",
         macIntel: "Mac Intel (x64)",
         linux: "Paquet Linux",
@@ -175,7 +179,8 @@ const TRANSLATIONS = {
         accessDeniedBody: "Ein gültiges Sicherheits-Token ist erforderlich, um auf das Repository zuzugreifen.",
         iconKey: "Symbollegende",
         folder: "Ordner",
-        win: "Windows-Installer",
+        winX64: "Windows-Installer (x64)",
+        winX86: "Windows-Installer (x86)",
         macArm: "Mac ARM (Silicon)",
         macIntel: "Mac Intel (x64)",
         linux: "Linux-Paket",
@@ -214,7 +219,8 @@ const TRANSLATIONS = {
         accessDeniedBody: "Для доступа к репозиторию файлов JPPS требуется действительный токен безопасности.",
         iconKey: "Легенда значков",
         folder: "Папка",
-        win: "Установщик Windows",
+        winX64: "Установщик Windows (x64)",
+        winX86: "Установщик Windows (x86)",
         macArm: "Mac ARM (Silicon)",
         macIntel: "Mac Intel (x64)",
         linux: "Пакет Linux",
@@ -284,7 +290,7 @@ export default {
             const parentLinkUrl = parentPfx.toLowerCase() === highestScope.toLowerCase() 
                 ? `/?${tokenParam}` 
                 : `/?prefix=${encodeURIComponent(parentPfx)}${tokenParam ? '&' + tokenParam : ''}`;
-            parentHtml = `<tr class="dir-row"><td colspan="3"><span class="icon-wrap">${getIcon('up')}</span> <a href="${parentLinkUrl}" class="file-link">${t.parentDir}</a></td></tr>`;
+            parentHtml = `<tr class="dir-row"><td colspan="3"><a href="${parentLinkUrl}" class="file-link" style="color:inherit;text-decoration:none"><span class="icon-wrap">${getIcon('up')}</span>${t.parentDir}</a></td></tr>`;
         }
 
         const currentPathDisplay = prefix.replace(new RegExp(`^${escapeRegex(highestScope)}`, 'i'), "");
@@ -293,7 +299,8 @@ export default {
         // Build the dynamic legend
         const legendItems = [
             { id: 'folder', label: t.folder },
-            { id: 'windows', label: t.win },
+            { id: 'windows_x64', label: t.winX64 },
+            { id: 'windows_x86', label: t.winX86 },
             { id: 'arm', label: t.macArm },
             { id: 'intel', label: t.macIntel },
             { id: 'linux', label: t.linux },
@@ -487,8 +494,11 @@ function getIcon(type) {
         // Folder
         folder: '📁',
         
-        // Windows
-        windows: '🪟',
+        // Windows x64 (MSI files)
+        windows_x64: '🪟<sub>x64</sub>',
+        
+        // Windows x86/32-bit (EXE files)
+        windows_x86: '🪟<sub>x86</sub>',
         
         // Linux - Penguin
         linux: '🐧',
@@ -539,7 +549,8 @@ function getFileOSIcon(fileName) {
         else if (n.includes('x64') || n.includes('intel')) types.push('intel');
         else types.push('file');
     } 
-    else if (['exe', 'msi'].includes(ext)) types.push('windows');
+    else if (ext === 'msi') types.push('windows_x64');
+    else if (ext === 'exe') types.push('windows_x86');
     else if (['deb', 'rpm', 'sh'].includes(ext)) types.push('linux');
     else if (ext === 'apk') types.push('android');
     else if (ext === 'pdf') types.push('pdf');
@@ -578,7 +589,7 @@ async function renderTree(bucket, prefix, rootUrl, tokenParam, highestScope, t) 
     let levelHtml = dirs.sort((a,b)=>a.name.localeCompare(b.name)).map(d => {
         const lp = d.prefix.toLowerCase() === highestScope.toLowerCase() ? "" : `prefix=${encodeURIComponent(d.prefix)}`;
         const linkUrl = lp ? `/?${lp}${tokenParam ? '&' + tokenParam : ''}` : `/?${tokenParam}`;
-        return `<tr class="dir-row"><td><span class="icon-wrap">${getIcon('folder')}</span> <a href="${linkUrl}" class="file-link">${escapeHtml(d.name)}/</a></td><td>--</td><td>--</td></tr>`;
+        return `<tr class="dir-row"><td><a href="${linkUrl}" class="file-link" style="color:inherit;text-decoration:none"><span class="icon-wrap">${getIcon('folder')}</span>${escapeHtml(d.name)}/</a></td><td>--</td><td>--</td></tr>`;
     }).join("");
 
     levelHtml += files.sort((a,b)=>a.name.localeCompare(b.name)).map(f => {
@@ -586,7 +597,7 @@ async function renderTree(bucket, prefix, rootUrl, tokenParam, highestScope, t) 
         result.types.forEach(type => activeIcons.add(type));
         
         const href = rootUrl ? `${rootUrl.replace(/\/$/, '')}/${f.key}` : `/raw/${encodeURIComponent(f.key)}`;
-        return `<tr><td><div class="file-link"><span>${result.iconsHtml}</span><a href="${href}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">${escapeHtml(f.name)}</a></div></td><td>${formatSize(f.size)}</td><td class="lm" data-ts="${f.time.toISOString()}">Loading...</td></tr>`;
+        return `<tr><td><a href="${href}" target="_blank" rel="noopener" class="file-link" style="color:inherit;text-decoration:none"><span class="icon-wrap">${result.iconsHtml}</span>${escapeHtml(f.name)}</a></td><td>${formatSize(f.size)}</td><td class="lm" data-ts="${f.time.toISOString()}">Loading...</td></tr>`;
     }).join("");
 
     return { html: levelHtml, totalFiles: files.length, totalDirs: dirs.length, activeIcons };
