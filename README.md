@@ -68,19 +68,28 @@ wrangler deploy
 
 * **Language Detection:** UI labels, dates, and relative timestamps are automatically localized based on the user's browser settings.
 * **Auto-Updating Timestamps:** Relative times (e.g., "5 minutes ago") automatically update every 60 seconds without requiring a page refresh. Hover over any timestamp to see the full date/time.
+* **Security Headers:** Industry-standard security headers protect against XSS, clickjacking, and MIME-sniffing attacks.
+* **Error Handling:** Localized error pages in all 6 languages with proper logging for troubleshooting.
+* **Performance Caching:** Directory listings are cached for 5 minutes to improve load times.
 * **Security:** Only `GET` requests are allowed. All management/write operations are blocked.
 * **Dynamic Casing:** The worker automatically resolves mixed-case R2 paths against your uppercase token names.
 * **Improved Icons:** File type icons are designed for instant recognition, using familiar symbols like the Windows logo, Android robot, play buttons, and zipper designs.
+* **Directory Size Limits:** Automatically handles large directories (up to 10,000 items) safely.
 
 ---
 
 ## 🎨 Recent Improvements
 
+* ✅ **Code Reorganization** - Clear sectioning with JSDoc comments for better maintainability
+* ✅ **Security Headers** - XSS protection, clickjacking prevention, and MIME-sniffing protection
+* ✅ **Error Handling** - Comprehensive error pages in all 6 languages with logging
+* ✅ **Performance Caching** - 5-minute cache on directory listings, configurable TTL
 * ✅ **Fixed URL Parameter Handling** - Corrected token parameter concatenation in directory navigation
 * ✅ **Added RegExp Escaping** - Secure handling of special characters in folder names
 * ✅ **Localized Relative Time** - "30 minutes ago" now translates to "hace 30 minutos", "30分钟前", etc.
-* ✅ **Enhanced Icons** - More recognizable and visually distinct icons for all file types
+* ✅ **Enhanced Icons** - More recognizable and visually distinct emoji icons for all file types
 * ✅ **Live Time Updates** - Timestamps refresh automatically every minute
+* ✅ **Extended File Support** - Added more archive, image, video, and audio formats
 
 ---
 
@@ -92,14 +101,14 @@ wrangler deploy
 | 🪟 x86 | Windows Installer (32-bit) | .exe |
 | 🐧 | Linux | .deb, .rpm, .sh |
 | 🤖 | Android | .apk |
-| 💻 Apple Silicon | Mac ARM (Apple Silicon) | .dmg, .pkg (with arm64/m1/m2 in filename) |
+| 💻 Apple Silicon | Mac ARM (Apple Silicon) | .dmg, .pkg (with arm64/m1/m2/m3 in filename) |
 | 💻 Intel | Mac Intel | .dmg, .pkg (with x64/intel in filename) |
 | 📄 | PDF | .pdf |
-| 🗜️ | Archive | .zip, .7z, .rar |
-| 📝 | Documents | .doc, .docx, .txt, .rtf |
-| 🖼️ | Images | .jpg, .png, .svg, .webp |
-| 🎬 | Video | .mp4, .mkv, .mov, .avi |
-| 🎵 | Audio | .mp3, .wav, .flac, .m4a |
+| 🗜️ | Archive | .zip, .7z, .rar, .tar, .gz, .bz2 |
+| 📝 | Documents | .doc, .docx, .txt, .rtf, .odt |
+| 🖼️ | Images | .jpg, .png, .svg, .webp, .gif, .bmp |
+| 🎬 | Video | .mp4, .mkv, .mov, .avi, .webm, .flv |
+| 🎵 | Audio | .mp3, .wav, .flac, .m4a, .ogg, .aac |
 | 📁 | Folder | Directories |
 
 ---
@@ -121,4 +130,8 @@ All UI elements, including button labels, file counts, timestamps, and the suppo
 
 ## 📄 License
 
+MIT License - See [LICENSE](LICENSE) file for details.
+
 Based on Listr2 by xolyn. Modified and enhanced by the contributors listed above.
+
+Professional support and customization available from [Jeff Parrish PC Services](https://www.jpps.us).
