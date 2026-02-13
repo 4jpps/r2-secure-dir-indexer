@@ -88,17 +88,18 @@ wrangler deploy
 
 | Icon | Type | Extensions |
 |------|------|------------|
-| 🪟 | Windows | .exe, .msi |
-| 🐧 | Linux | .deb, .rpm, .sh |
-| 🤖 | Android | .apk |
-| 💻 | Mac ARM | .dmg, .pkg (with arm64/m1/m2 in filename) |
-| 💻 | Mac Intel | .dmg, .pkg (with x64/intel in filename) |
-| 📄 | PDF | .pdf |
-| 🗜️ | Archive | .zip, .7z, .rar |
-| 📝 | Documents | .doc, .docx, .txt, .rtf |
-| 🖼️ | Images | .jpg, .png, .svg, .webp |
-| 🎬 | Video | .mp4, .mkv, .mov, .avi |
-| 🎵 | Audio | .mp3, .wav, .flac, .m4a |
+| <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" stroke="none"><path d="M0,0 L10,0 L10,10 L0,10 Z M0,12 L10,12 L10,22 L0,22 Z M12,0 L22,0 L22,10 L12,10 Z M12,12 L22,12 L22,22 L12,22 Z" transform="translate(1, 1)"/></svg> | Windows | .exe, .msi |
+| <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8l3 3-3 3M12 14h4"/></svg> | Linux | .deb, .rpm, .sh |
+| <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9v8h12V9H6z"/><path d="M6 9h12a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z"/><circle cx="9" cy="13" r="1"/><circle cx="15" cy="13" r="1"/><path d="M7 6l2-3M17 6l-2-3"/></svg> | Android | .apk |
+| <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/><text x="12" y="14" font-size="6" text-anchor="middle" fill="currentColor" stroke="none" font-family="monospace">A</text></svg> | Mac ARM | .dmg, .pkg (with arm64/m1/m2 in filename) |
+| <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/><circle cx="12" cy="12" r="3"/></svg> | Mac Intel | .dmg, .pkg (with x64/intel in filename) |
+| <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><text x="12" y="16" font-size="5" text-anchor="middle" fill="currentColor" stroke="none" font-weight="bold">PDF</text></svg> | PDF | .pdf |
+| <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="12"/><line x1="12" y1="13" x2="12" y2="14"/><line x1="12" y1="15" x2="12" y2="16"/><circle cx="12" cy="18" r="1"/></svg> | Archive | .zip, .7z, .rar |
+| <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg> | Documents | .doc, .docx, .txt, .rtf |
+| <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> | Images | .jpg, .png, .svg, .webp |
+| <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="2"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor"/></svg> | Video | .mp4, .mkv, .mov, .avi |
+| <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg> | Audio | .mp3, .wav, .flac, .m4a |
+| <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> | Folder | Directories |
 
 ---
 
@@ -114,6 +115,9 @@ The interface automatically adapts to the user's browser language:
 - **Russian** (ru) - Русский
 
 All UI elements, including button labels, file counts, timestamps, and the support legend are fully translated.
+
+---
+
 ## 📄 License
 
 Based on Listr2 by xolyn. Modified and enhanced by the contributors listed above.
