@@ -335,18 +335,24 @@ export default {
             h2 { font-size: 0.95em; color: var(--ui-text-muted); font-weight: 400; margin: 10px 0 25px 0; border-left: 3px solid var(--ui-accent); padding-left: 12px; }
             .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
             .btn-refresh { background: var(--ui-accent); color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; }
-            table { width: 100%; border-collapse: collapse; }
+            table { width: 100%; border-collapse: collapse; table-layout: fixed; }
             th { text-align: left; padding: 15px; color: var(--ui-text-muted); font-size: 0.75em; text-transform: uppercase; border-bottom: 1px solid var(--ui-glass-border); }
+            th:first-child { width: 50%; }
+            th:nth-child(2) { width: 20%; }
+            th:nth-child(3) { width: 30%; }
             td { padding: 14px 15px; border-bottom: 1px solid var(--ui-glass-border); }
+            td:first-child { width: 50%; min-width: 200px; }
+            td:nth-child(2) { width: 20%; }
+            td:nth-child(3) { width: 30%; }
             .dir-row:hover td { background: var(--ui-row-hover); }
             .file-link { text-decoration: none; color: inherit; font-weight: 500; display: flex; align-items: center; gap: 12px; }
-            .icon-wrap { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; }
+            .icon-wrap { min-width: 120px; height: 24px; display: inline-flex; align-items: center; justify-content: flex-start; flex-shrink: 0; font-size: 18px; }
             .icon-wrap svg { width: 100%; height: 100%; stroke-width: var(--ui-icon-stroke); }
-            .icon-wrap sub { font-size: 8px; font-weight: bold; margin-left: -8px; color: var(--ui-accent); }
+            .icon-wrap sub { font-size: 7px; font-weight: bold; margin-left: 2px; color: var(--ui-accent); white-space: nowrap; }
             .glass-panel { margin-top: 40px; padding: 25px; background: rgba(255, 255, 255, 0.03); border-radius: 18px; border: 1px solid var(--ui-glass-border); }
             .glass-panel h3 { margin: 0 0 18px 0; font-size: 0.85em; text-transform: uppercase; color: var(--ui-accent); }
             .glass-panel ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
-            .glass-panel li { font-size: 0.85em; display: flex; align-items: center; gap: 12px; color: var(--ui-text-muted); }
+            .glass-panel li { font-size: 0.85em; display: flex; align-items: center; gap: 12px; color: var(--ui-text-muted); min-height: 24px; }
             footer { margin-top: 50px; text-align: center; font-size: 0.8em; opacity: 0.7; padding-top: 20px; border-top: 1px solid var(--ui-glass-border); line-height: 1.8; }
             footer a { color: var(--ui-accent); text-decoration: none; }
             footer a:hover { text-decoration: underline; }
@@ -490,11 +496,11 @@ function getIcon(type) {
         // Android - Robot
         android: '🤖',
         
-        // ARM - Chip with "ARM" text indicator
-        arm: '💻<sub>ARM</sub>',
+        // ARM - Apple Silicon with text indicator
+        arm: '💻<sub>Apple Silicon</sub>',
         
-        // Intel - Chip with "x64" text indicator  
-        intel: '💻<sub>x64</sub>',
+        // Intel - Intel with text indicator  
+        intel: '💻<sub>Intel</sub>',
         
         // PDF
         pdf: '📄',
