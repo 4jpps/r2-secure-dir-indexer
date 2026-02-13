@@ -20,3 +20,29 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+## Commercial Support & Services
+
+While this software is freely available under the MIT License, professional
+support, customization, and deployment services are available from:
+
+**Jeff Parrish PC Services**
+- Website: https://www.jpps.us
+- Custom deployment and configuration
+- Token-based access control setup
+- Multi-language customization
+- UI/UX enhancements and branding
+- Ongoing maintenance and support
+- Integration with existing systems
+
+For enterprise deployments, custom features, or professional support, please
+contact Jeff Parrish PC Services through the website above.
+
+---
+
+## Attribution
+
+This project builds upon the original Listr2 by xolyn (https://github.com/xolyn/listr2).
+Please see ATTRIBUTION.md for detailed contributor information.
